@@ -1,6 +1,7 @@
 sudo: false
 language: cpp
 compiler: g++
+cache: apt
 install:
     - if [ "$CXX" = "g++" ]; then export CXX="g++-4.7" CC="gcc-4.7"; fi
 addons:

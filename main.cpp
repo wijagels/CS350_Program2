@@ -1,4 +1,4 @@
-/* Copyright 2016 Sarude Dandstorm */
+/* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include <iostream>
 #include <string>
 

@@ -9,7 +9,7 @@ class Imap {
 public:
   Imap();
 private:
-  std::array<Inodeid, 10000> map_;
+  std::array<Inodeid, 10240> map_;
 };
 
 #endif /* IMAP_H */

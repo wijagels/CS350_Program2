@@ -1,11 +1,14 @@
 #ifndef INODE_HPP_
 #define INODE_HPP_
 
-using Blockid = unsigned;
+#include <array>
+
+using Blockid = unsigned int;
 
 class Inode {
 public:
-  Inode();
+  Inode() = delete;
+  Inode(Blockid);
 private:
   std::string fname_;
   std::array<Blockid, 128> blocks_;

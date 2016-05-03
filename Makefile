@@ -33,6 +33,9 @@ clean:
 	-rm $(EXECUTABLE) *.o
 
 test: all
-	$(RUN)
+	echo "Help" | $(RUN)
+
+lint: $(SOURCES) $(HEADERS)
+	cpplint $^
 
 .PHONY: clean

@@ -1,7 +1,8 @@
 #include "Inode.hpp"
-#include "FileSystem.hpp"
 
 #include <assert.h>
+
+#include "FileSystem.hpp"
 
 Inode::Inode(Blockid id): blocks_{} {
   // read file info from block #id

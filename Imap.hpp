@@ -8,6 +8,7 @@ using Inodeid = unsigned int;
 class Imap {
 public:
   Imap();
+  Inodeid& operator[](int);
 private:
   std::array<Inodeid, 10240> map_;
 };

@@ -1,9 +1,11 @@
 #include "Imap.hpp"
-#include "FileSystem.hpp"
-#include "debug.h"
+
+#include <assert.h>
 
 #include <fstream>
-#include <assert.h>
+
+#include "debug.h"
+#include "FileSystem.hpp"
 
 Imap::Imap(): map_{} {
   std::ifstream checkpoint("DRIVE/CHECKPOINT_REGION", std::ios::binary);
@@ -27,4 +29,8 @@ Imap::Imap(): map_{} {
   }
 
   checkpoint.close();
+}
+
+Inodeid& Imap::operator[](int i) {
+  return map_[i];
 }

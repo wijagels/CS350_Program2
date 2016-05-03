@@ -10,6 +10,7 @@ class Inode {
 public:
   Inode() = delete;
   Inode(Blockid);
+  Blockid& operator[](int);
 private:
   std::string fname_;
   std::array<Blockid, 128> blocks_;

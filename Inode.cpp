@@ -11,10 +11,9 @@ Inode::Inode(Blockid id): blocks_{} {
   char fname[1025-DATA_SZ];
 
   // read filename
-  unsigned i = 0;
-  while (i < 1024-DATA_SZ && block[i] != 0) {
+  unsigned i;
+  for (i = 0; i < 1024-DATA_SZ && block[i] != 0; i++) {
     fname[i] = block[i];
-    i++;
   }
   fname[i+1] = '\0';
   fname_ = std::string{fname};
@@ -24,8 +23,11 @@ Inode::Inode(Blockid id): blocks_{} {
 
   // read the rest
   for (int j = 0; j < 128; j++) {
-    assert(i < 1024);
     blocks_[j] = bytes_to_uint(&(block[i]));
     i += 4;
   }
+}
+
+Blockid& Inode::operator[](int i) {
+  return blocks_[i];
 }

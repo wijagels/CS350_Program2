@@ -1,6 +1,7 @@
 #ifndef INODE_HPP_
 #define INODE_HPP_
 
+#include <string>
 #include <array>
 
 using Blockid = unsigned int;

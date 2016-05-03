@@ -1,7 +1,11 @@
+/* Copyright 2016 Sarude Dandstorm */
 #include <iostream>
-#include <fstream>
+#include <string>
+
+#include "FileSystem.hpp"
 
 int main() {
-
-  return 0;
+  FileSystem fs;
+  std::string cmd;
+  std::getline(std::cin, cmd);
 }

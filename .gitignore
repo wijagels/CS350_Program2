@@ -42,3 +42,6 @@ program[0-9]
 
 # Compiled ycm config
 .ycm_extra_conf.pyc
+
+# Mac shit
+.DS_Store

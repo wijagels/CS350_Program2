@@ -1,6 +1,11 @@
-/* Copyright 2016 Sarude Dandstorm */
+/* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #pragma once
 #include <string>
+
+using uint = unsigned int;
+
+void fs_read_block(char *, uint);
+uint bytes_to_uint(char *);
 
 class FileSystem {
  public:

@@ -16,17 +16,9 @@ uint bytes_to_uint(char *);
 
 class FileSystem {
  public:
-  FileSystem() : FileSystem(32, 1024 * 1024, 1024, 10 * 1000, 128 * 1024, 40) {}
+  FileSystem();
   FileSystem(uint segment_count, uint segment_size, uint block_size,
-             uint max_files, uint max_file_size, uint imap_blocks)
-      : SEGMENT_COUNT(segment_count),
-        SEGMENT_SIZE(segment_size),
-        BLOCK_SIZE(block_size),
-        MAX_FILES(max_files),
-        MAX_FILE_SIZE(max_file_size),
-        IMAP_BLOCKS(imap_blocks),
-        imap_(),
-        segment_{} {}
+             uint max_files, uint max_file_size, uint imap_blocks);
   bool import(std::string, std::string);
   bool remove(std::string);
   std::string cat(std::string);

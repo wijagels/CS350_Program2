@@ -33,6 +33,7 @@ clean:
 	-rm $(EXECUTABLE) *.o
 
 test: all
+	$(RUN) initialize
 	echo "list" | $(RUN)
 
 lint: $(SOURCES) $(HEADERS)

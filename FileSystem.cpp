@@ -1,29 +1,69 @@
+/* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "FileSystem.hpp"
 
 #include <fstream>
 #include <sstream>
 #include <cassert>
 #include <string>
+#include <vector>
 
-bool FileSystem::import(std::string lin_fn, std::string lfs_fn) {
+#include "./debug.h"
+
+/*
+ * Default constructor, uses default parameters as specified in program
+ * description
+ */
+FileSystem::FileSystem()
+    : FileSystem(32, 1024 * 1024, 1024, 10 * 1000, 128 * 1024, 40) {}
+
+FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
+                       uint max_files, uint max_file_size, uint imap_blocks)
+    : SEGMENT_COUNT(segment_count),
+      SEGMENT_SIZE(segment_size),
+      BLOCK_SIZE(block_size),
+      MAX_FILES(max_files),
+      MAX_FILE_SIZE(max_file_size),
+      IMAP_BLOCKS(imap_blocks),
+      imap_(),
+      segment_() {}
+
+bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   assert(!imap_.is_full());
 
-  std::ifstream f(lin_fn, std::ios::binary);
-  assert(f.is_open());
-
-  char *blocks[MAX_FILE_SIZE];
-  uint i;
-  for (i = 0; f.good() && i < MAX_FILE_SIZE/BLOCK_SIZE; i++) {
-    blocks[i] = new char[BLOCK_SIZE];
-    f.read(blocks[i], BLOCK_SIZE);
+  std::ifstream file(linux_file, std::ios::binary);
+  assert(file.is_open());
+  file.seekg(0, std::ios::end);
+  std::streampos size = file.tellg();
+  logd("File size %d", static_cast<int>(size));
+  if (size > MAX_FILE_SIZE) {
+    return false;
   }
-  assert(!f.good());
+  char *buf = new char[size];
+  file.seekg(0, std::ios::beg);
+  file.read(buf, size);
+  file.close();
+  std::vector<std::vector<char> > blocks(size / BLOCK_SIZE + 1);
+  logd("Length %lu", blocks.size());
+  for (unsigned i = 0; i < size / BLOCK_SIZE + 1; i++) {
+    if (BLOCK_SIZE * (i + 1) >= size) {
+      logd("Final block %d, end %d", BLOCK_SIZE * i, (unsigned)size);
+      blocks[i].insert(blocks[i].end(), &buf[BLOCK_SIZE * i],
+                       &buf[(unsigned)size]);
+    } else {
+      logd("Start %d, end %d", BLOCK_SIZE * i, BLOCK_SIZE * (i + 1));
+      blocks[i].insert(blocks[i].end(), &buf[BLOCK_SIZE * i],
+                       &buf[BLOCK_SIZE * (i + 1)]);
+    }
+  }
 
-  Inode node(lfs_fn);
+  // Create a new inode
+  Inode node(lfs_file);
   // For each block from lin_fn
-  for (uint j = 0; j < i; j++) {
+  for (auto& e: blocks) {
     // Get a block from the log and write to it
-    int b_id = log(blocks[j]);
+    logd("Writing %lu bytes", e.size());
+    // I hesitate to use reinterpret cast in this situation but we'll work it out later
+    int b_id = log(reinterpret_cast<char *>(&e[0]));
     // Store the blocks in the inode
     node[j] = b_id;
     // Then write the inode to a block
@@ -31,16 +71,24 @@ bool FileSystem::import(std::string lin_fn, std::string lfs_fn) {
     // Store the inode in the imap
     imap_.next_inode_id() = n_id;
   }
-
-  // Cleanup
-  for (uint z = 0; z < i; z++) {
-    delete[] blocks[z];
+  /* For testing purposes */
+  std::ofstream fout;
+  fout.open("img.jpg", std::ios::binary);
+  for (auto e : blocks) {
+    logd("Writing %lu bytes", e.size());
+    fout.write(reinterpret_cast<char *>(&e[0]), e.size());
   }
+  fout.close();
+  return true;
 }
 
 bool FileSystem::remove(std::string) { return true; }
 
-std::string FileSystem::list() { return ""; }
+std::string FileSystem::list() {
+  std::stringstream ss;
+  ss << "== List of Files ==";
+  return ss.str();
+}
 
 bool FileSystem::exit() { return true; }
 

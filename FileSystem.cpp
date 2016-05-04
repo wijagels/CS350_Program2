@@ -14,7 +14,7 @@
  * description
  */
 FileSystem::FileSystem()
-    : FileSystem(32, 1024 * 1024, 1024, 10 * 1000, 128 * 1024, 40) {}
+    : FileSystem(32, 1024 * 1024, 1024, 10 * 1024, 128 * 1024, 40) {}
 
 FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
                        uint max_files, uint max_file_size, uint imap_blocks)
@@ -74,6 +74,8 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   auto n_id = log(node);
   // Store the inode in the imap
   imap_.add_inode(n_id);
+  // Add the inode to the directory listing
+  dir_.add_file(lfs_file, n_id);
   // TODO Do we also want to log the imap here or wait until we exit?
 
   /* For testing purposes */

@@ -39,4 +39,6 @@ void initialize_fs(void) {
   file.open("DRIVE/CHECKPOINT_REGION", std::ios::binary);
   file.write(block, 320);
   file.close();
+  file.open("DRIVE/DIR", std::ios::out);
+  file.close();
 }

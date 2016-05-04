@@ -6,12 +6,21 @@
 
 #include "Controller.hpp"
 #include "FileSystem.hpp"
+#include "Initializer.hpp"
 
 int main(int argc, char** argv) {
-  if (argc != 1) {
+  if (argc != 1 && argc != 2) {
     std::cerr << argv[0] << std::endl;
     std::cerr << "Invalid number of arguments" << std::endl;
     exit(1);
+  } else if (argc == 2) {
+    if (std::string(argv[1]) == "initialize") {
+      initialize_fs();
+      return 0;
+    } else {
+      std::cerr << "Invalid number of arguments" << std::endl;
+      exit(1);
+    }
   }
   Controller c;
   return c.parse_commands() == true ? 0 : 1;

@@ -35,7 +35,7 @@ unsigned& Imap::operator[](int i) {
   return map_[i];
 }
 
-inline bool Imap::is_full() {
+bool Imap::is_full() {
   return next_inode() == 10240;
 }
 

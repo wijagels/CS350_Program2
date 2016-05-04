@@ -2,10 +2,10 @@
 
 class Block {
 public:
-  Block() = delete;
+  Block();
   Block(unsigned);
   virtual ~Block();
-  inline char *&block() { return block_; }
+  inline char *block() { return block_; }
   char& operator[](int);
   inline unsigned size() { return sz_; }
 private:

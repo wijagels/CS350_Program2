@@ -33,7 +33,7 @@ clean:
 	-rm $(EXECUTABLE) *.o
 
 test: all
-	echo "Help" | $(RUN)
+	echo "list" | $(RUN)
 
 lint: $(SOURCES) $(HEADERS)
 	cpplint $^

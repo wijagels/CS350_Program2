@@ -1,4 +1,5 @@
-sudo: false
+sudo: required
+dist: trusty
 language: cpp
 compiler: g++
 cache: apt
@@ -6,8 +7,6 @@ install:
     - if [ "$CXX" = "g++" ]; then export CXX="g++-4.7" CC="gcc-4.7"; fi
 addons:
   apt:
-    sources:
-    - ubuntu-toolchain-r-test
     packages:
     - gcc-4.7
     - g++-4.7

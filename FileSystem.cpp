@@ -5,6 +5,7 @@
 #include <sstream>
 #include <cassert>
 #include <string>
+#include <vector>
 
 #include "./debug.h"
 
@@ -25,9 +26,8 @@ FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
       IMAP_BLOCKS(imap_blocks),
       imap_() {}
 
-bool FileSystem::import(std::string file_name, std::string destination) {
-  std::ifstream file;
-  file.open(file_name, std::ios::binary);
+bool FileSystem::import(std::string linux_file, std::string lfs_file) {
+  std::ifstream file(linux_file, std::ios::binary);
   assert(file.is_open());
   file.seekg(0, std::ios::end);
   std::streampos size = file.tellg();
@@ -39,6 +39,27 @@ bool FileSystem::import(std::string file_name, std::string destination) {
   file.seekg(0, std::ios::beg);
   file.read(buf, size);
   file.close();
+  std::vector<std::vector<char> > blocks(size / BLOCK_SIZE + 1);
+  logd("Length %lu", blocks.size());
+  for (unsigned i = 0; i < size / BLOCK_SIZE + 1; i++) {
+    if (BLOCK_SIZE * (i + 1) >= size) {
+      logd("Final block %d, end %d", BLOCK_SIZE * i, (unsigned)size);
+      blocks[i].insert(blocks[i].end(), &buf[BLOCK_SIZE * i],
+                       &buf[(unsigned)size]);
+    } else {
+      logd("Start %d, end %d", BLOCK_SIZE * i, BLOCK_SIZE * (i + 1));
+      blocks[i].insert(blocks[i].end(), &buf[BLOCK_SIZE * i],
+                       &buf[BLOCK_SIZE * (i + 1)]);
+    }
+  }
+  /* For testing purposes */
+  std::ofstream fout;
+  fout.open("img.jpg", std::ios::binary);
+  for (auto e : blocks) {
+    logd("Writing %lu bytes", e.size());
+    fout.write(reinterpret_cast<char *>(&e[0]), e.size());
+  }
+  fout.close();
   return true;
 }
 

@@ -4,14 +4,16 @@
 #include <cassert>
 #include <string>
 #include <fstream>
+#include <vector>
 
+#include "./debug.h"
 #include "Controller.hpp"
 #include "Imap.hpp"
 
 Directory::Directory() : Directory("DRIVE/DIR") {}
 
 Directory::Directory(std::string file)
-    : dir_file_name_(file), dir_file_(file, std::ios::in) {
+    : dir_file_name_(file), dir_file_(file, std::ios::in), dir_map_() {
   assert(dir_file_.is_open());
   std::string line;
   while (getline(dir_file_, line)) {
@@ -24,6 +26,7 @@ Directory::Directory(std::string file)
 Directory::~Directory() { write_out(); }
 
 void Directory::write_out(void) {
+  logd("Destructing directory");
   /* std::ios::trunc clobbers the file for us */
   dir_file_.open(dir_file_name_, std::ios::out | std::ios::trunc);
   assert(dir_file_.is_open());
@@ -53,4 +56,12 @@ unsigned Directory::remove_file(std::string name) {
   } catch (std::out_of_range) {
     return 0;
   }
+}
+
+std::vector<unsigned> Directory::dump_inodes() {
+  std::vector<unsigned> inodes;
+  for (auto e : dir_map_) {
+    inodes.push_back(e.second);
+  }
+  return inodes;
 }

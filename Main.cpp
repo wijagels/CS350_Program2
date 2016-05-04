@@ -7,6 +7,7 @@
 #include "Controller.hpp"
 #include "FileSystem.hpp"
 #include "Initializer.hpp"
+#include "Directory.hpp"
 
 int main(int argc, char** argv) {
   if (argc != 1 && argc != 2) {
@@ -80,6 +81,12 @@ exitstatus Controller::execute_command(std::string cmd) {
     bool status = fs_.exit();
     if (status) return EXIT;
     return FS_ERROR;
+  }
+  if (tokenized.at(0) == "ilookup") {
+    if (tokenized.size() != 2) return BAD_LEN;
+    Directory d;
+    std::cout << d.lookup_file(tokenized.at(1)) << std::endl;
+    return OKAY;
   }
   return NOT_CMD;
 }

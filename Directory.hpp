@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include <vector>
 
 #include "Imap.hpp"
 
@@ -15,6 +16,7 @@ class Directory {
   unsigned add_file(std::string, unsigned);
   unsigned lookup_file(std::string);
   unsigned remove_file(std::string);
+  std::vector<unsigned> dump_inodes();
 
  protected:
   void write_out(void);

@@ -12,13 +12,13 @@ class Directory {
   Directory();
   explicit Directory(std::string);
   ~Directory();
-  Inodeid add_file(std::string, Inodeid);
-  Inodeid lookup_file(std::string);
-  Inodeid remove_file(std::string);
+  unsigned add_file(std::string, unsigned);
+  unsigned lookup_file(std::string);
+  unsigned remove_file(std::string);
 
  protected:
   void write_out(void);
   std::string dir_file_name_;
   std::fstream dir_file_;
-  std::map<std::string, Inodeid> dir_map_;
+  std::map<std::string, unsigned> dir_map_;
 };

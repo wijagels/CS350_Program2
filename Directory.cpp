@@ -32,12 +32,12 @@ void Directory::write_out(void) {
   }
 }
 
-Inodeid Directory::add_file(std::string name, Inodeid inode) {
+unsigned Directory::add_file(std::string name, unsigned inode) {
   dir_map_.insert({name, inode});
   return inode;
 }
 
-Inodeid Directory::lookup_file(std::string name) {
+unsigned Directory::lookup_file(std::string name) {
   try {
     return dir_map_.at(name);
   } catch (std::out_of_range) {
@@ -45,9 +45,9 @@ Inodeid Directory::lookup_file(std::string name) {
   }
 }
 
-Inodeid Directory::remove_file(std::string name) {
+unsigned Directory::remove_file(std::string name) {
   try {
-    Inodeid deleted = dir_map_.at(name);
+    unsigned deleted = dir_map_.at(name);
     dir_map_.erase(name);
     return deleted;
   } catch (std::out_of_range) {

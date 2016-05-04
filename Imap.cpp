@@ -31,6 +31,18 @@ Imap::Imap(): map_{} {
   checkpoint.close();
 }
 
-Inodeid& Imap::operator[](int i) {
+unsigned& Imap::operator[](int i) {
   return map_[i];
+}
+
+bool Imap::is_full() {
+  return next_inode_id() >= 10240;
+}
+
+unsigned& Imap::next_inode_id() {
+  int i;
+  for (i = 0; i < 10240; i++) {
+    if (map_[i] == 0) break;
+  }
+  return i;
 }

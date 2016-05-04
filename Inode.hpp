@@ -9,6 +9,7 @@ using Blockid = unsigned int;
 class Inode {
 public:
   Inode() = delete;
+  Inode(const std::string&);
   Inode(Blockid);
   Blockid& operator[](int);
 private:

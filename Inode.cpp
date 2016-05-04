@@ -29,6 +29,8 @@ Inode::Inode(Blockid id): blocks_{} {
   }
 }
 
+Inode::Inode(const std::string& fname): fname_{fname}, blocks_{} {}
+
 Blockid& Inode::operator[](int i) {
   return blocks_[i];
 }

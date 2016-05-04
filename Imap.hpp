@@ -3,14 +3,14 @@
 
 #include <array>
 
-using Inodeid = unsigned int;
-
 class Imap {
 public:
   Imap();
-  Inodeid& operator[](int);
+  unsigned& operator[](int);
+  bool is_full();
+  unsigned& next_inode_id();
 private:
-  std::array<Inodeid, 10240> map_;
+  std::array<unsigned, 10240> map_;
 };
 
 #endif /* IMAP_H */

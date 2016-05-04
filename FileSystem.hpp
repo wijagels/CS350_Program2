@@ -1,6 +1,13 @@
 /* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #pragma once
+
+#include <array>
+#include <memory>
 #include <string>
+
+#include "Imap.hpp"
+#include "Inode.hpp"
+#include "Segment.hpp"
 
 using uint = unsigned int;
 
@@ -17,7 +24,9 @@ class FileSystem {
         BLOCK_SIZE(block_size),
         MAX_FILES(max_files),
         MAX_FILE_SIZE(max_file_size),
-        IMAP_BLOCKS(imap_blocks) {}
+        IMAP_BLOCKS(imap_blocks),
+        imap_(),
+        segment_{} {}
   bool import(std::string, std::string);
   bool remove(std::string);
   std::string cat(std::string);
@@ -25,6 +34,13 @@ class FileSystem {
   bool overwrite(std::string, uint, uint, char);
   std::string list();
   bool exit();
+private:
+  void next_block();
+  uint current_block();
+  // TODO
+  int log(char *);
+  // TODO
+  int log(const Inode&);
 
  protected:
   const uint SEGMENT_COUNT;
@@ -33,4 +49,9 @@ class FileSystem {
   const uint MAX_FILES;
   const uint MAX_FILE_SIZE;
   const uint IMAP_BLOCKS;
+private:
+  using SegmentPtr = std::unique_ptr<Segment>;
+  Imap imap_;
+  std::array<bool, 32> free_segs_;
+  SegmentPtr segment_;
 };

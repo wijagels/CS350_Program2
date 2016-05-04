@@ -34,3 +34,7 @@ Inode::Inode(const std::string& fname): fname_{fname}, blocks_{} {}
 Blockid& Inode::operator[](int i) {
   return blocks_[i];
 }
+
+const Blockid& Inode::operator[](int i) const {
+  return blocks_[i];
+}

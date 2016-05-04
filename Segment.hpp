@@ -7,10 +7,12 @@
 class Segment {
 public:
   Segment() = delete;
-  Segment(int, unsigned, unsigned);
+  Segment(unsigned, unsigned, unsigned);
   inline bool is_free() { return free_block_ < blocks_.size(); }
-  Block& write(char *);
+  unsigned write(char *);
+  inline int id() { return id_; }
 private:
   std::vector<Block> blocks_;
   unsigned free_block_;
+  unsigned id_;
 };

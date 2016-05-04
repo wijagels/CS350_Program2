@@ -5,9 +5,10 @@
 #include <fstream>
 #include <sstream>
 
-Segment::Segment(int id, unsigned blocks, unsigned block_sz):
+Segment::Segment(unsigned id, unsigned blocks, unsigned block_sz):
   blocks_{blocks},
-  free_block_{8} {
+  free_block_{8},
+  id_{id} {
   // Initialize with new blocks
   for (auto& b: blocks_) {
     b = Block{block_sz};
@@ -26,12 +27,12 @@ Segment::Segment(int id, unsigned blocks, unsigned block_sz):
   seg_file.close();
 }
 
-Block& Segment::write(char *data) {
+unsigned Segment::write(char *data) {
   assert(free_block_ < blocks_.size());
 
   unsigned sz = blocks_[free_block_].size();
   for (unsigned i = 0; i < sz; i++) {
     blocks_[free_block_][i] = data[i];
   }
-  return blocks_[free_block_++];
+  return free_block_++;
 }

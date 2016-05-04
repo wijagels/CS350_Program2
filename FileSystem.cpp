@@ -71,7 +71,7 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   // Then write the inode to a block
   auto n_id = log(node);
   // Store the inode in the imap
-  imap_.next_inode_id() = n_id;
+  imap_.add_inode(n_id);
   // TODO Do we also want to log the imap here or wait until we exit?
 
   /* For testing purposes */
@@ -97,7 +97,7 @@ bool FileSystem::exit() { return true; }
 
 /* Assumes block is of size 1024 */
 // TODO Move this to a better place so it can be used by every object in the FS
-void read_block(char *block, uint block_num) {
+void fs_read_block(char *block, uint block_num) {
   uint seg_num = block_num / 1024;
   uint seg_ind = block_num % 1024;
   std::ostringstream ss;

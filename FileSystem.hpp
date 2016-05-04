@@ -22,6 +22,9 @@ class FileSystem {
   bool remove(std::string);
   std::string cat(std::string);
   std::string display(std::string, uint, uint);
+  bool overwrite(std::string, uint, uint, char);
+  std::string list();
+  bool exit();
 
  protected:
   const uint SEGMENT_COUNT;

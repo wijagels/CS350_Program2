@@ -2,7 +2,16 @@
 
 #include <fstream>
 #include <sstream>
-#include <assert.h>
+#include <cassert>
+#include <string>
+
+bool FileSystem::import(std::string, std::string) { return true; }
+
+bool FileSystem::remove(std::string) { return true; }
+
+std::string FileSystem::list() { return ""; }
+
+bool FileSystem::exit() { return true; }
 
 /* Assumes block is of size 1024 */
 // TODO Move this to a better place so it can be used by every object in the FS

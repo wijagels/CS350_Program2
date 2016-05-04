@@ -11,8 +11,8 @@
 
 void initialize_fs(void) {
   struct stat st;
-  if (stat("/DRIVE", &st) == -1) {
-    mkdir("/DRIVE", 0700);
+  if (stat("./DRIVE", &st) == -1) {
+    mkdir("./DRIVE", 0700);
   }
   DIR *dp;
   struct dirent *ep;

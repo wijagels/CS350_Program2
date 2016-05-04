@@ -18,7 +18,7 @@ Imap::Imap(): map_{} {
     checkpoint.read(buf, 4);
     id = bytes_to_uint(buf);
 
-    // Read segment into memory
+    // Read block into memory
     char block[1024];
     fs_read_block(block, id);
 
@@ -35,16 +35,15 @@ unsigned& Imap::operator[](int i) {
   return map_[i];
 }
 
-bool Imap::is_full() {
-  int i;
-  for (i = 0; i < 10240; i++) {
-    if (map_[i] == 0) break;
-  }
-  return i >= 10240;
+inline bool Imap::is_full() {
+  return next_inode() == 10240;
 }
 
-void Imap::add_inode(unsigned node_blk) {
-  for (int i = 0; i < 10240; i++) {
-    if (map_[i] == 0) map_[i] = node_blk;
+unsigned Imap::next_inode() {
+  for (unsigned i = 0; i < 10240; i++) {
+    if (map_[i] == 0) {
+      return i;
+    }
   }
+  return 10240;
 }

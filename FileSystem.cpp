@@ -25,7 +25,8 @@ FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
       MAX_FILE_SIZE(max_file_size),
       IMAP_BLOCKS(imap_blocks),
       imap_(),
-      segment_() {}
+      segment_(),
+      dir_() {}
 
 bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   assert(!imap_.is_full());
@@ -62,7 +63,8 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   for (unsigned i = 0; i < blocks.size(); i++) {
     // Get a block from the log and write to it
     logd("Writing %lu bytes", blocks[i].size());
-    // I hesitate to use reinterpret cast in this situation but we'll work it out later
+    // I hesitate to use reinterpret cast in this situation but we'll work it
+    // out later
     auto b_id = log(reinterpret_cast<char *>(&blocks[i][0]));
     // Store the blocks in the inode
     node[i] = b_id;
@@ -89,7 +91,13 @@ bool FileSystem::remove(std::string) { return true; }
 
 std::string FileSystem::list() {
   std::stringstream ss;
-  ss << "== List of Files ==";
+  ss << "== List of Files ==" << std::endl;
+  ss << "Filename\tinode" << std::endl;
+  for (auto e : dir_.dump_inodes()) {
+    logd("Read inode %u", e);
+    Inode i(imap_[e]);
+    ss << i.filename() << "\t" << e << std::endl;
+  }
   return ss.str();
 }
 
@@ -118,22 +126,23 @@ int FileSystem::log(char *data) {
       if (free_segs_[s]) {
         // Set it to being used
         free_segs_[s] = false;
-        segment_ = SegmentPtr(new Segment(s+1, SEGMENT_SIZE/BLOCK_SIZE, BLOCK_SIZE));
+        segment_ = SegmentPtr(
+            new Segment(s + 1, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE));
       }
     }
     assert(segment_->is_free());
   }
 
   auto blk_num = segment_->write(data);
-  return (segment_->id()-1)*SEGMENT_SIZE + blk_num;
+  return (segment_->id() - 1) * SEGMENT_SIZE + blk_num;
 }
 
-int FileSystem::log(const Inode& inode) {
-  const unsigned filename_len = inode.filename().size()+1;
-  const unsigned data_len = 128*4;
-  assert(filename_len+data_len <= BLOCK_SIZE);
+int FileSystem::log(const Inode &inode) {
+  const unsigned filename_len = inode.filename().size() + 1;
+  const unsigned data_len = 128 * 4;
+  assert(filename_len + data_len <= BLOCK_SIZE);
 
-  char data[filename_len+data_len];
+  char data[filename_len + data_len];
   const char *filename = inode.filename().c_str();
 
   // Populate first part with filename
@@ -142,12 +151,12 @@ int FileSystem::log(const Inode& inode) {
     data[i] = filename[i];
   }
   // Write the data blocks after filename
-  for (uint j = 0; j < data_len; j+=4) {
+  for (uint j = 0; j < data_len; j += 4) {
     // Little endian FTW
-    data[i+j] = static_cast<char>(inode[j]);
-    data[i+j+1] = static_cast<char>(inode[j]>>8);
-    data[i+j+2] = static_cast<char>(inode[j]>>16);
-    data[i+j+3] = static_cast<char>(inode[j]>>24);
+    data[i + j] = static_cast<char>(inode[j]);
+    data[i + j + 1] = static_cast<char>(inode[j] >> 8);
+    data[i + j + 2] = static_cast<char>(inode[j] >> 16);
+    data[i + j + 3] = static_cast<char>(inode[j] >> 24);
   }
 
   return log(data);

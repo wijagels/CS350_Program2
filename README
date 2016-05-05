@@ -1,0 +1,9 @@
+{Taylor Foxhall, Tim Hung, William Jagels}
+Run make test before running the program.
+Or run ./program2 initialize.
+This will create the files and directories needed.
+Then, run ./program2 to enter an interactive shell
+list
+import {linux file path} {lfs file name}
+remove {lfs file name}
+exit

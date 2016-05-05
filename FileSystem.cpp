@@ -6,6 +6,7 @@
 #include <cassert>
 #include <string>
 #include <vector>
+#include <iomanip>
 
 #include "./debug.h"
 
@@ -14,33 +15,41 @@
  * description
  */
 FileSystem::FileSystem()
-    : FileSystem(32, 1024 * 1024, 1024, 10 * 1024, 128 * 1024, 40) {}
+    : FileSystem{32, 1024 * 1024, 1024, 10 * 1024, 128 * 1024, 40} {}
 
 FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
                        uint max_files, uint max_file_size, uint imap_blocks)
-    : SEGMENT_COUNT(segment_count),
-      SEGMENT_SIZE(segment_size),
-      BLOCK_SIZE(block_size),
-      MAX_FILES(max_files),
-      MAX_FILE_SIZE(max_file_size),
-      IMAP_BLOCKS(imap_blocks),
-      imap_(),
-      free_segs_(),
-      segment_(),
-      dir_() {
-  std::ifstream checkpoint("DRIVE/CHECKPOINT_REGION", std::ios::binary);
+    : SEGMENT_COUNT{segment_count},
+      SEGMENT_SIZE{segment_size},
+      BLOCK_SIZE{block_size},
+      MAX_FILES{max_files},
+      MAX_FILE_SIZE{max_file_size},
+      IMAP_BLOCKS{imap_blocks},
+      imap_{},
+      live_segs_{},
+      segment_{},
+      dir_{} {
+  std::ifstream checkpoint{"DRIVE/CHECKPOINT_REGION", std::ios::binary};
   assert(checkpoint.is_open());
-  checkpoint.seekg(40*4, std::ios::beg);
+  checkpoint.seekg(40 * 4, std::ios::beg);
 
   for (unsigned i = 0; checkpoint.good() && i < 32; i++) {
     // Get byte
     char buf;
     checkpoint.read(&buf, 1);
     // Read update free table
-    free_segs_[i] = buf;
+    live_segs_[i] = buf;
   }
 
   checkpoint.close();
+
+  for (unsigned i = 0; i < live_segs_.size(); i++) {
+    if (!live_segs_.at(i)) {
+      segment_ =
+          SegmentPtr{new Segment{i, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE}};
+      break;
+    }
+  }
 }
 
 bool FileSystem::import(std::string linux_file, std::string lfs_file) {
@@ -80,7 +89,7 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
     logd("Writing %lu bytes", blocks[i].size());
     // I hesitate to use reinterpret cast in this situation but we'll work it
     // out later
-    auto b_loc = log(reinterpret_cast<char *>(&blocks[i][0]));
+    auto b_loc = log(blocks[i].data());
     // Store the blocks in the inode
     node[i] = b_loc;
   }
@@ -91,9 +100,11 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   auto m_loc = imap_.next_inode();
   imap_[m_loc] = n_loc;
   // Update the imap and update the checkpoint region
+  logd("%lu", m_loc);
+  logd("%lu", n_loc);
   log_imap_sector(4 * m_loc / BLOCK_SIZE);
   // Add the inode to the directory listing
-  dir_.add_file(lfs_file, n_loc);
+  dir_.add_file(lfs_file, m_loc);
 
   /* For testing purposes */
   std::ofstream fout;
@@ -106,21 +117,27 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   return true;
 }
 
-bool FileSystem::remove(std::string) { return true; }
+bool FileSystem::remove(std::string file) { dir_.remove_file(file); }
 
 std::string FileSystem::list() {
   std::stringstream ss;
   ss << "== List of Files ==" << std::endl;
-  ss << "Filename\tinode" << std::endl;
-  for (auto e : dir_.dump_inodes()) {
-    logd("Read inode %u", e);
-    Inode i(imap_[e]);
-    ss << i.filename() << "\t" << e << std::endl;
+  ss << "Filename" << std::setw(6) << "inode" << std::endl;
+  // for (auto e : dir_.dump_inodes()) {
+  //   logd("Read inode %u", e);
+  //   Inode i(imap_[e]);
+  //   ss << i.filename() << "\t" << e << std::endl;
+  // }
+  for (auto e : dir_.get_map()) {
+    ss << e.first << std::setw(6) << e.second << std::endl;
   }
   return ss.str();
 }
 
-bool FileSystem::exit() { return true; }
+bool FileSystem::exit() {
+  segment_->commit();  // Commits to disk, works %100$ i promise chelsea
+  return true;
+}
 
 /* Assumes block is of size 1024 */
 // TODO Move this to a better place so it can be used by every object in the FS
@@ -138,27 +155,28 @@ void fs_read_block(char *block, uint block_num) {
 }
 
 int FileSystem::log(char *data) {
+  assert(segment_.get() != nullptr);
   if (!segment_->is_free()) {
     // Find a new free segment
     // Maybe replace with a std::find
-    for (uint s = 0; s < free_segs_.size(); s++) {
-      if (free_segs_[s]) {
+    for (uint s = 0; s < live_segs_.size(); s++) {
+      if (live_segs_[s]) {
         // Set it to being used
-        free_segs_[s] = false;
+        live_segs_[s] = true;
 
         // Write segment to drive
         segment_->commit();
 
         // Get a new segment
-        segment_ = SegmentPtr(
-            new Segment(s + 1, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE));
+        segment_ =
+            SegmentPtr(new Segment(s, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE));
       }
     }
     assert(segment_->is_free());
   }
 
   auto blk_num = segment_->write(data);
-  return (segment_->id() - 1) * SEGMENT_SIZE + blk_num;
+  return segment_->id() * SEGMENT_SIZE + blk_num;
 }
 
 int FileSystem::log(const Inode &inode) {
@@ -209,9 +227,12 @@ void FileSystem::log_imap_sector(uint sector) {
   m_loc_bytes[3] = static_cast<char>(m_loc >> 24);
 
   // Update the checkpoint region
-  std::ofstream checkpoint("DRIVE/CHECKPOINT_REGION", std::ios::binary);
+  std::ofstream checkpoint("DRIVE/CHECKPOINT_REGION",
+                           std::ios::binary | std::ios::out | std::ios::app);
 
+  logd("%d", sector);
   checkpoint.seekp(sector * 4, std::ios::beg);
+  logd("%d", static_cast<int>(checkpoint.tellp()));
   checkpoint.write(m_loc_bytes, 4);
 
   checkpoint.close();

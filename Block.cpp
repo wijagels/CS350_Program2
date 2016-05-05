@@ -1,17 +1,13 @@
+/* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "Block.hpp"
 
-Block::Block():
-  block_{nullptr},
-  sz_{0} {}
+Block::Block() : block_{nullptr}, sz_{0} {}
 
-Block::Block(unsigned sz):
-  block_{new char[sz]},
-  sz_{sz} {}
+Block::Block(unsigned sz) : block_{new char[sz]}, sz_{sz} {}
 
 Block::~Block() {
-  delete[] block_;
+  // delete[] block_;
+  // TODO fix this later
 }
 
-char& Block::operator[](int i) {
-  return block_[i];
-}
+char& Block::operator[](int i) { return block_[i]; }

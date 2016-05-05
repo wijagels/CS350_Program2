@@ -6,6 +6,7 @@
 #include <cassert>
 #include <string>
 #include <vector>
+#include <iomanip>
 
 #include "./debug.h"
 
@@ -121,14 +122,14 @@ bool FileSystem::remove(std::string file) { dir_.remove_file(file); }
 std::string FileSystem::list() {
   std::stringstream ss;
   ss << "== List of Files ==" << std::endl;
-  ss << "Filename\tinode" << std::endl;
+  ss << "Filename" << std::setw(6) << "inode" << std::endl;
   // for (auto e : dir_.dump_inodes()) {
   //   logd("Read inode %u", e);
   //   Inode i(imap_[e]);
   //   ss << i.filename() << "\t" << e << std::endl;
   // }
   for (auto e : dir_.get_map()) {
-    ss << e.first << "\t" << e.second << std::endl;
+    ss << e.first << std::setw(6) << e.second << std::endl;
   }
   return ss.str();
 }

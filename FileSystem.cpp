@@ -65,18 +65,20 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
     logd("Writing %lu bytes", blocks[i].size());
     // I hesitate to use reinterpret cast in this situation but we'll work it
     // out later
-    auto b_id = log(reinterpret_cast<char *>(&blocks[i][0]));
+    auto b_loc = log(reinterpret_cast<char *>(&blocks[i][0]));
     // Store the blocks in the inode
-    node[i] = b_id;
+    node[i] = b_loc;
   }
 
   // Then write the inode to a block
-  auto n_id = log(node);
+  auto n_loc = log(node);
   // Store the inode in the imap
-  imap_.add_inode(n_id);
+  auto m_loc = imap_.next_inode();
+  imap_[m_loc] = n_loc;
+  // Update the imap and update the checkpoint region
+  log_imap_sector(4 * m_loc / BLOCK_SIZE);
   // Add the inode to the directory listing
   dir_.add_file(lfs_file, n_id);
-  // TODO Do we also want to log the imap here or wait until we exit?
 
   /* For testing purposes */
   std::ofstream fout;
@@ -128,6 +130,11 @@ int FileSystem::log(char *data) {
       if (free_segs_[s]) {
         // Set it to being used
         free_segs_[s] = false;
+
+        // Write segment to drive
+        segment_->commit();
+
+        // Get a new segment
         segment_ = SegmentPtr(
             new Segment(s + 1, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE));
       }
@@ -144,7 +151,7 @@ int FileSystem::log(const Inode &inode) {
   const unsigned data_len = 128 * 4;
   assert(filename_len + data_len <= BLOCK_SIZE);
 
-  char data[filename_len + data_len];
+  char data[BLOCK_SIZE];
   const char *filename = inode.filename().c_str();
 
   // Populate first part with filename
@@ -160,8 +167,39 @@ int FileSystem::log(const Inode &inode) {
     data[i + j + 2] = static_cast<char>(inode[j] >> 16);
     data[i + j + 3] = static_cast<char>(inode[j] >> 24);
   }
+  // Pad rest with 0s
+  for (uint k = filename_len + data_len; k < BLOCK_SIZE; k++) {
+    data[k] = 0;
+  }
 
   return log(data);
+}
+
+void FileSystem::log_imap_sector(uint sector) {
+  auto start = sector * BLOCK_SIZE;
+  char data[BLOCK_SIZE];
+  // Write the imap piece to a block
+  for (uint i = 0; i < BLOCK_SIZE / 4; i++) {
+    // Little endian FTW
+    data[4 * i] = static_cast<char>(imap_[start + i]);
+    data[4 * i + 1] = static_cast<char>(imap_[start + i] >> 8);
+    data[4 * i + 2] = static_cast<char>(imap_[start + i] >> 16);
+    data[4 * i + 3] = static_cast<char>(imap_[start + i] >> 24);
+  }
+  uint m_loc = log(data);
+  char m_loc_bytes[4];
+  m_loc_bytes[0] = static_cast<char>(m_loc);
+  m_loc_bytes[1] = static_cast<char>(m_loc >> 8);
+  m_loc_bytes[2] = static_cast<char>(m_loc >> 16);
+  m_loc_bytes[3] = static_cast<char>(m_loc >> 24);
+
+  // Update the checkpoint region
+  std::ofstream checkpoint("DRIVE/CHECKPOINT_REGION", std::ios::binary);
+
+  checkpoint.seekp(sector * 4, std::ios::beg);
+  checkpoint.write(m_loc_bytes, 4);
+
+  checkpoint.close();
 }
 
 unsigned bytes_to_uint(char *bytes) {

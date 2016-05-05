@@ -11,6 +11,7 @@ public:
   inline bool is_free() { return free_block_ < blocks_.size(); }
   unsigned write(char *);
   inline int id() { return id_; }
+  void commit();
 private:
   std::vector<Block> blocks_;
   unsigned free_block_;

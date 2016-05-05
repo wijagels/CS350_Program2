@@ -36,3 +36,15 @@ unsigned Segment::write(char *data) {
   }
   return free_block_++;
 }
+
+void Segment::commit() {
+  std::ostringstream ss;
+  ss << "DRIVE/SEGMENT" << id_;
+  std::ofstream seg_file(ss.str(), std::ios::binary);
+
+  for (auto &b: blocks_) {
+    seg_file.write(b.block(), b.size());
+  }
+
+  seg_file.close();
+}

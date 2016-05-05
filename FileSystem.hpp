@@ -31,10 +31,9 @@ class FileSystem {
  private:
   void next_block();
   uint current_block();
-  // TODO
   int log(char *);
-  // TODO
   int log(const Inode &);
+  void log_imap_sector(uint);
 
  protected:
   const uint SEGMENT_COUNT;

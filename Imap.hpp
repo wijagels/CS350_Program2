@@ -8,7 +8,7 @@ public:
   Imap();
   unsigned& operator[](int);
   bool is_full();
-  void add_inode(unsigned);
+  unsigned next_inode();
 private:
   std::array<unsigned, 10240> map_;
 };

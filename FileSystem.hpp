@@ -29,13 +29,11 @@ class FileSystem {
   bool exit();
 
  private:
-  void next_block();
-  uint current_block();
   int log(char *);
   int log(const Inode &);
   void log_imap_sector(uint);
 
-private:
+ private:
   const uint SEGMENT_COUNT;
   const uint SEGMENT_SIZE;
   const uint BLOCK_SIZE;

@@ -14,7 +14,7 @@
  * description
  */
 FileSystem::FileSystem()
-    : FileSystem(32, 1024 * 1024, 1024, 10 * 1000, 128 * 1024, 40) {}
+    : FileSystem(32, 1024 * 1024, 1024, 10 * 1024, 128 * 1024, 40) {}
 
 FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
                        uint max_files, uint max_file_size, uint imap_blocks)
@@ -29,7 +29,6 @@ FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
       dir_() {}
 
 bool FileSystem::import(std::string linux_file, std::string lfs_file) {
-
   assert(!imap_.is_full());
 
   std::ifstream file(linux_file, std::ios::binary);
@@ -77,7 +76,9 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   auto m_loc = imap_.next_inode();
   imap_[m_loc] = n_loc;
   // Update the imap and update the checkpoint region
-  log_imap_sector(4*m_loc/BLOCK_SIZE);
+  log_imap_sector(4 * m_loc / BLOCK_SIZE);
+  // Add the inode to the directory listing
+  dir_.add_file(lfs_file, n_loc);
 
   /* For testing purposes */
   std::ofstream fout;
@@ -178,7 +179,7 @@ void FileSystem::log_imap_sector(uint sector) {
   auto start = sector * BLOCK_SIZE;
   char data[BLOCK_SIZE];
   // Write the imap piece to a block
-  for (uint i = 0; i < BLOCK_SIZE/4; i++) {
+  for (uint i = 0; i < BLOCK_SIZE / 4; i++) {
     // Little endian FTW
     data[4 * i] = static_cast<char>(imap_[start + i]);
     data[4 * i + 1] = static_cast<char>(imap_[start + i] >> 8);

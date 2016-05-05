@@ -1,3 +1,4 @@
+/* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #ifndef INODE_HPP_
 #define INODE_HPP_
 
@@ -7,14 +8,15 @@
 using Blockid = unsigned int;
 
 class Inode {
-public:
+ public:
   Inode() = delete;
   Inode(const std::string&);
   Inode(Blockid);
   Blockid& operator[](int);
   const Blockid& operator[](int) const;
   inline const std::string& filename() const { return fname_; }
-private:
+
+ private:
   std::string fname_;
   std::array<Blockid, 128> blocks_;
 };

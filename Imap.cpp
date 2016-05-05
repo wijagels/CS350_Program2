@@ -1,3 +1,4 @@
+/* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "Imap.hpp"
 
 #include <assert.h>
@@ -7,7 +8,7 @@
 #include "debug.h"
 #include "FileSystem.hpp"
 
-Imap::Imap(): map_{} {
+Imap::Imap() : map_{} {
   std::ifstream checkpoint("DRIVE/CHECKPOINT_REGION", std::ios::binary);
   assert(checkpoint.is_open());
 
@@ -24,20 +25,16 @@ Imap::Imap(): map_{} {
 
     // Read block into imap
     for (int j = 0; j < 256; j++) {
-      map_[i*256+j] = bytes_to_uint(&(block[j*4]));
+      map_[i * 256 + j] = bytes_to_uint(&(block[j * 4]));
     }
   }
 
   checkpoint.close();
 }
 
-unsigned& Imap::operator[](int i) {
-  return map_[i];
-}
+unsigned& Imap::operator[](int i) { return map_[i]; }
 
-bool Imap::is_full() {
-  return next_inode() == 10240;
-}
+bool Imap::is_full() { return next_inode() == 10240; }
 
 unsigned Imap::next_inode() {
   for (unsigned i = 0; i < 10240; i++) {

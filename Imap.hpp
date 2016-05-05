@@ -1,15 +1,17 @@
+/* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #ifndef IMAP_HPP_
 #define IMAP_HPP_
 
 #include <array>
 
 class Imap {
-public:
+ public:
   Imap();
   unsigned& operator[](int);
   bool is_full();
   unsigned next_inode();
-private:
+
+ private:
   std::array<unsigned, 10240> map_;
 };
 

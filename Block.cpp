@@ -1,3 +1,4 @@
+/* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "Block.hpp"
 
 Block::Block() : block_{nullptr}, sz_{0} {}

@@ -1,3 +1,4 @@
+/* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "Segment.hpp"
 
 #include <assert.h>

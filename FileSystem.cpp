@@ -78,7 +78,7 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   // Update the imap and update the checkpoint region
   log_imap_sector(4 * m_loc / BLOCK_SIZE);
   // Add the inode to the directory listing
-  dir_.add_file(lfs_file, n_id);
+  dir_.add_file(lfs_file, n_loc);
 
   /* For testing purposes */
   std::ofstream fout;

@@ -25,14 +25,14 @@ void initialize_fs(void) {
     remove(filepath);
   }
   closedir(dp);
-  char *block = new char[1024 * 1000];
-  memset(block, 0, 1024 * 1000);
+  char *block = new char[1024 * 1024];
+  memset(block, 0, 1024 * 1024);
   for (unsigned i = 0; i < 32; i++) {
     std::ofstream file;
     std::stringstream ss;
     ss << "DRIVE/SEGMENT" << i;
     file.open(ss.str(), std::ios::binary);
-    file.write(block, 1024 * 1000);
+    file.write(block, 1024 * 1024);
     file.close();
   }
   std::ofstream file;

@@ -5,29 +5,35 @@
 #include <fstream>
 #include <sstream>
 
-Segment::Segment(unsigned id, unsigned blocks, unsigned block_sz):
-  blocks_{blocks},
-  free_block_{8},
-  id_{id} {
+#include "./debug.h"
+
+Segment::Segment(unsigned id, unsigned blocks, unsigned block_sz)
+    : blocks_{}, free_block_{8}, id_{id} {
   // Initialize with new blocks
-  for (auto& b: blocks_) {
-    b = Block{block_sz};
+  for (unsigned i = 0; i < blocks; i++) {
+    blocks_.push_back(Block{block_sz});
   }
 
   // Get ready to read from a segment file
   std::ostringstream ss;
   ss << "DRIVE/SEGMENT" << id;
-  std::ifstream seg_file{ss.str(), std::ios::binary};
+  logd("%s", ss.str().c_str());
+  std::ifstream seg_file(ss.str(), std::ios::binary);
   assert(seg_file.is_open());
+  seg_file.seekg(0, std::ios::end);
+  logd("Size %d", static_cast<int>(seg_file.tellg()));
+  seg_file.clear();
+  seg_file.seekg(0, std::ios::beg);
+  logd("Begin %d", static_cast<int>(seg_file.tellg()));
 
   // Read seg file
-  for (auto& b: blocks_) {
+  for (auto& b : blocks_) {
     seg_file.read(b.block(), block_sz);
   }
   seg_file.close();
 }
 
-unsigned Segment::write(char *data) {
+unsigned Segment::write(char* data) {
   assert(free_block_ < blocks_.size());
 
   unsigned sz = blocks_[free_block_].size();
@@ -42,7 +48,7 @@ void Segment::commit() {
   ss << "DRIVE/SEGMENT" << id_;
   std::ofstream seg_file(ss.str(), std::ios::binary);
 
-  for (auto &b: blocks_) {
+  for (auto& b : blocks_) {
     seg_file.write(b.block(), b.size());
   }
 

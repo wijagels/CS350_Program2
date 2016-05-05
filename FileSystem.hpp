@@ -43,7 +43,7 @@ class FileSystem {
 
   using SegmentPtr = std::unique_ptr<Segment>;
   Imap imap_;
-  std::array<bool, 32> free_segs_;
+  std::array<bool, 32> live_segs_;
   SegmentPtr segment_;
   Directory dir_;
 };

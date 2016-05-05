@@ -25,8 +25,23 @@ FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
       MAX_FILE_SIZE(max_file_size),
       IMAP_BLOCKS(imap_blocks),
       imap_(),
+      free_segs_(),
       segment_(),
-      dir_() {}
+      dir_() {
+  std::ifstream checkpoint("DRIVE/CHECKPOINT_REGION", std::ios::binary);
+  assert(checkpoint.is_open());
+  checkpoint.seekg(40*4, std::ios::beg);
+
+  for (unsigned i = 0; checkpoint.good() && i < 32; i++) {
+    // Get byte
+    char buf;
+    checkpoint.read(&buf, 1);
+    // Read update free table
+    free_segs_[i] = buf;
+  }
+
+  checkpoint.close();
+}
 
 bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   assert(!imap_.is_full());

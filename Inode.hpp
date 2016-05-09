@@ -10,7 +10,7 @@ using Blockid = unsigned int;
 class Inode {
  public:
   Inode() = delete;
-  Inode(const std::string&);
+  Inode(const std::string&, unsigned);
   Inode(Blockid);
   Blockid& operator[](int);
   const Blockid& operator[](int) const;
@@ -18,6 +18,7 @@ class Inode {
 
  private:
   std::string fname_;
+  unsigned fsize_;
   std::array<Blockid, 128> blocks_;
 };
 

@@ -83,7 +83,7 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   }
 
   // Create a new inode
-  Inode node(lfs_file);
+  Inode node(lfs_file, static_cast<int>(size));
   // For each block from lin_fn
   for (unsigned i = 0; i < blocks.size(); i++) {
     // Get a block from the log and write to it

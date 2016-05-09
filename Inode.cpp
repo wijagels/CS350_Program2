@@ -5,7 +5,7 @@
 
 #include "FileSystem.hpp"
 
-Inode::Inode(Blockid id) : blocks_{} {
+Inode::Inode(Blockid id) : blocks_() {
   // read file info from block #id
   constexpr const unsigned DATA_SZ = 128 * 4;
   char block[1024];
@@ -25,12 +25,11 @@ Inode::Inode(Blockid id) : blocks_{} {
 
   // read the rest
   for (int j = 0; j < 128; j++) {
-    blocks_[j] = bytes_to_uint(&(block[i]));
-    i += 4;
+    blocks_[j] = bytes_to_uint(&(block[i + j*4]));
   }
 }
 
-Inode::Inode(const std::string& fname) : fname_{fname}, blocks_{} {}
+Inode::Inode(const std::string& fname, unsigned fsize) : fname_{fname}, fsize_{fsize}, blocks_() {}
 
 Blockid& Inode::operator[](int i) { return blocks_[i]; }
 

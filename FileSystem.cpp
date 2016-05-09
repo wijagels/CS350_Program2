@@ -88,8 +88,6 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   for (unsigned i = 0; i < blocks.size(); i++) {
     // Get a block from the log and write to it
     logd("Writing %lu bytes", blocks[i].size());
-    // I hesitate to use reinterpret cast in this situation but we'll work it
-    // out later
     auto b_loc = log(blocks[i].data());
     // Store the blocks in the inode
     node[i] = b_loc;
@@ -108,17 +106,26 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   dir_.add_file(lfs_file, m_loc);
 
   /* For testing purposes */
-  std::ofstream fout;
-  fout.open("img.jpg", std::ios::binary);
-  for (auto e : blocks) {
-    logd("Writing %lu bytes", e.size());
-    fout.write(reinterpret_cast<char *>(&e[0]), e.size());
-  }
-  fout.close();
+  // std::ofstream fout;
+  // fout.open("img.jpg", std::ios::binary);
+  // for (auto e : blocks) {
+  //   logd("Writing %lu bytes", e.size());
+  //   fout.write(reinterpret_cast<char *>(&e[0]), e.size());
+  // }
+  // fout.close();
   return true;
 }
 
-bool FileSystem::remove(std::string file) { dir_.remove_file(file); }
+bool FileSystem::remove(std::string file) {
+  unsigned inode = dir_.lookup_file(file);
+  if (inode == -1) {
+    return false;
+  }
+  dir_.remove_file(file);
+  imap_[inode] = 0;
+  log_imap_sector(4 * inode / BLOCK_SIZE);
+  return true;
+}
 
 std::string FileSystem::list() {
   std::stringstream ss;
@@ -139,17 +146,25 @@ bool FileSystem::exit() {
   segment_->commit();  // Commits to disk, works %100$ i promise chelsea
 
   // Write segment use to checkpoint region
-  std::fstream checkpoint{"DRIVE/CHECKPOINT_REGION", std::ios::binary | std::ios::in |
-      std::ios::out};
+  std::fstream checkpoint{"DRIVE/CHECKPOINT_REGION",
+                          std::ios::binary | std::ios::in | std::ios::out};
   checkpoint.seekp(160, std::ios::beg);
 
-  for (auto s: live_segs_) {
+  for (auto s : live_segs_) {
     // logd("Writing segment availability: %d", s);
     checkpoint.put(s);
   }
 
   checkpoint.close();
   return true;
+}
+
+std::string FileSystem::cat(std::string filename) {
+  unsigned inum = dir_.lookup_file(filename);
+  assert(inum != 0);
+  unsigned blockid = imap_[inum];
+  assert(blockid != 0);
+  Inode inode{blockid};
 }
 
 /* Assumes block is of size 1024 */
@@ -160,8 +175,8 @@ void fs_read_block(char *block, uint block_num) {
   std::ostringstream ss;
   ss << "DRIVE/SEGMENT" << seg_num;
   std::ifstream seg(ss.str(), std::ios::binary);
-  logd("Reading block %u from segment %u starting at byte %u",
-       block_num, seg_num, seg_ind*1024);
+  logd("Reading block %u from segment %u starting at byte %u", block_num,
+       seg_num, seg_ind * 1024);
   assert(seg.is_open());
 
   seg.seekg(seg_ind * 1024, std::ios::beg);
@@ -191,7 +206,7 @@ int FileSystem::log(char *data) {
   }
 
   auto blk_num = segment_->write(data);
-  return segment_->id() * SEGMENT_SIZE/BLOCK_SIZE + blk_num;
+  return segment_->id() * SEGMENT_SIZE / BLOCK_SIZE + blk_num;
 }
 
 int FileSystem::log(const Inode &inode) {

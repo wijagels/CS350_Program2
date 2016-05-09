@@ -44,7 +44,7 @@ unsigned Directory::lookup_file(std::string name) {
   try {
     return dir_map_.at(name);
   } catch (std::out_of_range) {
-    return 0;
+    return -1;
   }
 }
 
@@ -54,7 +54,7 @@ unsigned Directory::remove_file(std::string name) {
     dir_map_.erase(name);
     return deleted;
   } catch (std::out_of_range) {
-    return 0;
+    return -1;
   }
 }
 

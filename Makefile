@@ -32,9 +32,11 @@ $(EXECUTABLE): $(OBJECTS)
 clean:
 	-rm $(EXECUTABLE) *.o
 
-test: all
-	$(RUN) initialize
+test: all initialize
 	echo "list" | $(RUN)
+
+initialize: all
+	$(RUN) initialize
 
 lint: $(SOURCES) $(HEADERS)
 	cpplint $^

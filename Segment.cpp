@@ -12,7 +12,7 @@ Segment::Segment(unsigned id, unsigned blocks, unsigned block_sz)
     : blocks_{}, free_block_{8}, id_{id} {
   // Initialize with new blocks
   for (unsigned i = 0; i < blocks; i++) {
-    blocks_.push_back(Block{block_sz});
+    blocks_.push_back(Block(block_sz, '\0'));
   }
 
   // Get ready to read from a segment file
@@ -29,7 +29,7 @@ Segment::Segment(unsigned id, unsigned blocks, unsigned block_sz)
 
   // Read seg file
   for (auto& b : blocks_) {
-    seg_file.read(b.block(), block_sz);
+    seg_file.read(b.data(), block_sz);
   }
   seg_file.close();
 }
@@ -41,6 +41,9 @@ unsigned Segment::write(char* data) {
   for (unsigned i = 0; i < sz; i++) {
     blocks_[free_block_][i] = data[i];
   }
+
+  logd("Wrote to block %u of segment %u", free_block_, id_);
+
   return free_block_++;
 }
 
@@ -50,8 +53,10 @@ void Segment::commit() {
   std::ofstream seg_file(ss.str(), std::ios::binary);
 
   for (auto& b : blocks_) {
-    seg_file.write(b.block(), b.size());
+    seg_file.write(b.data(), b.size());
   }
 
   seg_file.close();
+
+  logd("Commit segment %u", id_);
 }

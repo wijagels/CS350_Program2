@@ -31,12 +31,12 @@ FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
       dir_{} {
   std::ifstream checkpoint{"DRIVE/CHECKPOINT_REGION", std::ios::binary};
   assert(checkpoint.is_open());
-  checkpoint.seekg(40 * 4, std::ios::beg);
+  checkpoint.seekg(160, std::ios::beg);
 
   for (unsigned i = 0; checkpoint.good() && i < 32; i++) {
     // Get byte
     char buf;
-    checkpoint.read(&buf, 1);
+    checkpoint.get(buf);
     // Read update free table
     live_segs_[i] = buf;
   }
@@ -44,9 +44,10 @@ FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
   checkpoint.close();
 
   for (unsigned i = 0; i < live_segs_.size(); i++) {
-    if (!live_segs_.at(i)) {
+    if (!live_segs_[i]) {
       segment_ =
           SegmentPtr{new Segment{i, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE}};
+      live_segs_[i] = true;
       break;
     }
   }
@@ -136,6 +137,18 @@ std::string FileSystem::list() {
 
 bool FileSystem::exit() {
   segment_->commit();  // Commits to disk, works %100$ i promise chelsea
+
+  // Write segment use to checkpoint region
+  std::fstream checkpoint{"DRIVE/CHECKPOINT_REGION", std::ios::binary | std::ios::in |
+      std::ios::out};
+  checkpoint.seekp(160, std::ios::beg);
+
+  for (auto s: live_segs_) {
+    // logd("Writing segment availability: %d", s);
+    checkpoint.put(s);
+  }
+
+  checkpoint.close();
   return true;
 }
 
@@ -147,9 +160,12 @@ void fs_read_block(char *block, uint block_num) {
   std::ostringstream ss;
   ss << "DRIVE/SEGMENT" << seg_num;
   std::ifstream seg(ss.str(), std::ios::binary);
+  logd("Reading from %s", ss.str().c_str());
   assert(seg.is_open());
+  // logd("Reading block %u from segment %u starting at byte %u",
+  //      block_num, seg_num, seg_ind*1024);
 
-  seg.seekg(seg_ind, std::ios::beg);
+  seg.seekg(seg_ind * 1024, std::ios::beg);
   seg.read(block, 1024);
   seg.close();
 }
@@ -160,7 +176,7 @@ int FileSystem::log(char *data) {
     // Find a new free segment
     // Maybe replace with a std::find
     for (uint s = 0; s < live_segs_.size(); s++) {
-      if (live_segs_[s]) {
+      if (!live_segs_[s]) {
         // Set it to being used
         live_segs_[s] = true;
 
@@ -220,6 +236,7 @@ void FileSystem::log_imap_sector(uint sector) {
     data[4 * i + 3] = static_cast<char>(imap_[start + i] >> 24);
   }
   uint m_loc = log(data);
+  logd("New imap segment written to block %u", m_loc);
   char m_loc_bytes[4];
   m_loc_bytes[0] = static_cast<char>(m_loc);
   m_loc_bytes[1] = static_cast<char>(m_loc >> 8);
@@ -228,11 +245,11 @@ void FileSystem::log_imap_sector(uint sector) {
 
   // Update the checkpoint region
   std::ofstream checkpoint("DRIVE/CHECKPOINT_REGION",
-                           std::ios::binary | std::ios::out | std::ios::app);
+                           std::ios::binary | std::ios::out | std::ios::in);
 
-  logd("%d", sector);
+  logd("Sector: %d", sector);
   checkpoint.seekp(sector * 4, std::ios::beg);
-  logd("%d", static_cast<int>(checkpoint.tellp()));
+  logd("Logging to byte: %d", static_cast<int>(checkpoint.tellp()));
   checkpoint.write(m_loc_bytes, 4);
 
   checkpoint.close();

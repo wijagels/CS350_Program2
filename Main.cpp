@@ -70,7 +70,7 @@ exitstatus Controller::execute_command(std::string cmd) {
     bool status = fs_.remove(tokenized.at(1));
     if (status) return OKAY;
   }
-  if (tokenized.at(0) == "list") {
+  if (tokenized.at(0) == "list" || tokenized.at(0) == "ls") {
     if (tokenized.size() != 1) return BAD_LEN;
     std::string output = fs_.list();
     output_ << output << std::endl;

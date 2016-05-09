@@ -129,7 +129,7 @@ bool FileSystem::remove(std::string file) {
 
 std::string FileSystem::list() {
   std::stringstream ss;
-  ss << "== List of Files ==" << std::endl;
+  ss << "\n== List of Files ==" << std::endl;
   ss << "Filename" << std::setw(6) << "inode" << std::endl;
   // for (auto e : dir_.dump_inodes()) {
   //   logd("Read inode %u", e);
@@ -139,6 +139,7 @@ std::string FileSystem::list() {
   for (auto e : dir_.get_map()) {
     ss << e.first << std::setw(6) << e.second << std::endl;
   }
+  ss << std::endl;
   return ss.str();
 }
 

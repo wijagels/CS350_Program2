@@ -3,9 +3,9 @@
 
 #include <vector>
 
-#include "Block.hpp"
-
 class Segment {
+  using Block = std::vector<char>;
+
  public:
   Segment() = delete;
   Segment(unsigned, unsigned, unsigned);

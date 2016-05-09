@@ -160,10 +160,9 @@ void fs_read_block(char *block, uint block_num) {
   std::ostringstream ss;
   ss << "DRIVE/SEGMENT" << seg_num;
   std::ifstream seg(ss.str(), std::ios::binary);
-  logd("Reading from %s", ss.str().c_str());
+  logd("Reading block %u from segment %u starting at byte %u",
+       block_num, seg_num, seg_ind*1024);
   assert(seg.is_open());
-  // logd("Reading block %u from segment %u starting at byte %u",
-  //      block_num, seg_num, seg_ind*1024);
 
   seg.seekg(seg_ind * 1024, std::ios::beg);
   seg.read(block, 1024);
@@ -192,7 +191,7 @@ int FileSystem::log(char *data) {
   }
 
   auto blk_num = segment_->write(data);
-  return segment_->id() * SEGMENT_SIZE + blk_num;
+  return segment_->id() * SEGMENT_SIZE/BLOCK_SIZE + blk_num;
 }
 
 int FileSystem::log(const Inode &inode) {

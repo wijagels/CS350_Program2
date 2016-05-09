@@ -36,7 +36,7 @@ FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
   for (unsigned i = 0; checkpoint.good() && i < 32; i++) {
     // Get byte
     char buf;
-    checkpoint.read(&buf, 1);
+    checkpoint.get(buf);
     // Read update free table
     live_segs_[i] = buf;
   }
@@ -44,9 +44,10 @@ FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
   checkpoint.close();
 
   for (unsigned i = 0; i < live_segs_.size(); i++) {
-    if (!live_segs_.at(i)) {
+    if (!live_segs_[i]) {
       segment_ =
           SegmentPtr{new Segment{i, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE}};
+      live_segs_[i] = true;
       break;
     }
   }
@@ -136,6 +137,18 @@ std::string FileSystem::list() {
 
 bool FileSystem::exit() {
   segment_->commit();  // Commits to disk, works %100$ i promise chelsea
+
+  // Write segment use to checkpoint region
+  std::fstream checkpoint{"DRIVE/CHECKPOINT_REGION", std::ios::binary | std::ios::in |
+      std::ios::out};
+  checkpoint.seekp(160, std::ios::beg);
+
+  for (auto s: live_segs_) {
+    // logd("Writing segment availability: %d", s);
+    checkpoint.put(s);
+  }
+
+  checkpoint.close();
   return true;
 }
 
@@ -147,9 +160,10 @@ void fs_read_block(char *block, uint block_num) {
   std::ostringstream ss;
   ss << "DRIVE/SEGMENT" << seg_num;
   std::ifstream seg(ss.str(), std::ios::binary);
+  logd("Reading from %s", ss.str().c_str());
   assert(seg.is_open());
-  logd("Reading block %u from segment %u starting at byte %u",
-       block_num, seg_num, seg_ind*1024);
+  // logd("Reading block %u from segment %u starting at byte %u",
+  //      block_num, seg_num, seg_ind*1024);
 
   seg.seekg(seg_ind * 1024, std::ios::beg);
   seg.read(block, 1024);
@@ -162,7 +176,7 @@ int FileSystem::log(char *data) {
     // Find a new free segment
     // Maybe replace with a std::find
     for (uint s = 0; s < live_segs_.size(); s++) {
-      if (live_segs_[s]) {
+      if (!live_segs_[s]) {
         // Set it to being used
         live_segs_[s] = true;
 

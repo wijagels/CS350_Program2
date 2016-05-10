@@ -88,6 +88,11 @@ exitstatus Controller::execute_command(std::string cmd) {
     std::cout << d.lookup_file(tokenized.at(1)) << std::endl;
     return OKAY;
   }
+  if (tokenized.at(0) == "cat") {
+    if (tokenized.size() != 2) return BAD_LEN;
+    std::cout << fs_.cat(tokenized.at(1)) << std::endl;
+    return OKAY;
+  }
   return NOT_CMD;
 }
 

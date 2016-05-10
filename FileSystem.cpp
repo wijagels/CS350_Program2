@@ -131,13 +131,15 @@ std::string FileSystem::list() {
   const int COL_WIDTH = 20;
   std::stringstream ss;
   ss << "\n== List of Files ==" << std::endl;
-  ss << std::setw(COL_WIDTH) << "Filename" << std::setw(COL_WIDTH) << "inode" << std::setw(COL_WIDTH) << "Filesize" << std::endl;
-  for (uint i = 0; i < COL_WIDTH*3; i++) {
-    ss << "-"; 
+  ss << std::setw(COL_WIDTH) << "Filename" << std::setw(COL_WIDTH) << "inode"
+     << std::setw(COL_WIDTH) << "Filesize" << std::endl;
+  for (uint i = 0; i < COL_WIDTH * 3; i++) {
+    ss << "-";
   }
   ss << std::endl;
   for (const auto &e : dir_.get_map()) {
-    ss << std::setw(COL_WIDTH) << e.first << std::setw(COL_WIDTH) << e.second << std::setw(COL_WIDTH) << "<filesize>" << std::endl;
+    ss << std::setw(COL_WIDTH) << e.first << std::setw(COL_WIDTH) << e.second
+       << std::setw(COL_WIDTH) << "<filesize>" << std::endl;
   }
   ss << std::endl;
   return ss.str();
@@ -161,11 +163,21 @@ bool FileSystem::exit() {
 }
 
 std::string FileSystem::cat(std::string filename) {
+  segment_->commit();
   unsigned inum = dir_.lookup_file(filename);
-  assert(inum != 0);
+  logd("%d", inum);
+  assert(inum != -1);
   unsigned blockid = imap_[inum];
-  assert(blockid != 0);
+  assert(blockid != -1);
   Inode inode{blockid};
+  std::stringstream ss;
+  for (size_t i = 1; i < 2; i++) {
+    char block[128];
+    fs_read_block(block, 0);
+    logd("Access block %s", block);
+    ss << block;
+  }
+  return ss.str();
 }
 
 /* Assumes block is of size 1024 */
@@ -175,9 +187,9 @@ void fs_read_block(char *block, uint block_num) {
   uint seg_ind = block_num % 1024;
   std::ostringstream ss;
   ss << "DRIVE/SEGMENT" << seg_num;
+  logd("Reading block %u from segment %u starting at byte %u in file %s",
+       block_num, seg_num, seg_ind * 1024, ss.str().c_str());
   std::ifstream seg(ss.str(), std::ios::binary);
-  logd("Reading block %u from segment %u starting at byte %u", block_num,
-       seg_num, seg_ind * 1024);
   assert(seg.is_open());
 
   seg.seekg(seg_ind * 1024, std::ios::beg);

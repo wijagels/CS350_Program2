@@ -128,16 +128,12 @@ bool FileSystem::remove(std::string file) {
 }
 
 std::string FileSystem::list() {
+  const int COL_WIDTH = 10;
   std::stringstream ss;
   ss << "\n== List of Files ==" << std::endl;
-  ss << "Filename" << std::setw(6) << "inode" << std::endl;
-  // for (auto e : dir_.dump_inodes()) {
-  //   logd("Read inode %u", e);
-  //   Inode i(imap_[e]);
-  //   ss << i.filename() << "\t" << e << std::endl;
-  // }
-  for (auto e : dir_.get_map()) {
-    ss << e.first << std::setw(6) << e.second << std::endl;
+  ss << std::setw(COL_WIDTH) << "Filename" << std::setw(COL_WIDTH) << "inode" << std::endl;
+  for (const auto &e : dir_.get_map()) {
+    ss << std::setw(COL_WIDTH) << e.first << std::setw(COL_WIDTH) << e.second << std::setw(COL_WIDTH) << "<filesize>" << std::endl;
   }
   ss << std::endl;
   return ss.str();

@@ -41,4 +41,13 @@ initialize: all
 lint: $(SOURCES) $(HEADERS)
 	cpplint $^
 
+
+%.d: %.cpp
+	@set -e; rm -f $@; \
+	$(CXX) -MM $(CXXFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+-include $(SOURCES:%.cpp=%.d)
+
 .PHONY: clean

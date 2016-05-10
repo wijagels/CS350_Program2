@@ -34,6 +34,9 @@
 # Core dumps
 core
 
+# Dependency files
+*.d
+
 # Lab executables
 lab[0-9]
 

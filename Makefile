@@ -30,7 +30,7 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 clean:
-	-rm $(EXECUTABLE) *.o
+	-rm $(EXECUTABLE) *.o *.d
 
 test: all initialize
 	echo "list" | $(RUN)

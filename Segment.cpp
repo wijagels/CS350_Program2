@@ -67,6 +67,7 @@ void Segment::add_file(unsigned inode_id, unsigned block_id) {
       }
     }
   }
+  assert(false);
 }
 
 void Segment::commit() {

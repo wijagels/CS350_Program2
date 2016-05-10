@@ -218,18 +218,22 @@ int FileSystem::log(const Inode &inode) {
   char data[BLOCK_SIZE];
   const char *filename = inode.filename().c_str();
 
-  // Populate first part with filename
-  uint i;
-  for (i = 0; i < filename_len; i++) {
-    data[i] = filename[i];
+  // Populate first 4 bytes with filesize
+  data[0] = inode.filesize();
+  uint iter = 4;
+
+  // Populate second part with filename
+  for (uint i = 0; i < filename_len; i++) {
+    iter += 4;
+    data[iter] = filename[i];
   }
   // Write the data blocks after filename
   for (uint j = 0; j < data_len; j += 4) {
     // Little endian FTW
-    data[i + j] = static_cast<char>(inode[j]);
-    data[i + j + 1] = static_cast<char>(inode[j] >> 8);
-    data[i + j + 2] = static_cast<char>(inode[j] >> 16);
-    data[i + j + 3] = static_cast<char>(inode[j] >> 24);
+    data[iter + j] = static_cast<char>(inode[j]);
+    data[iter + j + 1] = static_cast<char>(inode[j] >> 8);
+    data[iter + j + 2] = static_cast<char>(inode[j] >> 16);
+    data[iter + j + 3] = static_cast<char>(inode[j] >> 24);
   }
   // Pad rest with 0s
   for (uint k = filename_len + data_len; k < BLOCK_SIZE; k++) {

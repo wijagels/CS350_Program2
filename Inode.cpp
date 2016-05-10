@@ -7,17 +7,22 @@
 
 Inode::Inode(Blockid id) : blocks_() {
   // read file info from block #id
-  constexpr const unsigned DATA_SZ = 128 * 4;
+
+  // 129 = 128 block + 1 filesize
+  constexpr const unsigned DATA_SZ = 129 * 4;
   char block[1024];
   fs_read_block(block, id);
-  char fname[1025 - DATA_SZ];
+  char fname[1024 - DATA_SZ];
+
+  // read filesize
+  fsize_ = bytes_to_uint(&(block[0]));
 
   // read filename
   unsigned i;
-  for (i = 0; i < 1024 - DATA_SZ && block[i] != 0; i++) {
-    fname[i] = block[i];
+  for (i = 4; i < 1024 - DATA_SZ && block[i] != 0; i++) {
+    fname[i - 4] = block[i];
   }
-  fname[i + 1] = '\0';
+  fname[i] = '\0';
   fname_ = std::string{fname};
 
   // make sure we're not out of room

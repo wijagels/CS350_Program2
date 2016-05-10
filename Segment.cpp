@@ -8,6 +8,8 @@
 
 #include "./debug.h"
 
+#include "FileSystem.hpp"
+
 Segment::Segment(unsigned id, unsigned blocks, unsigned block_sz)
     : blocks_{}, free_block_{8}, id_{id} {
   // Initialize with new blocks
@@ -45,6 +47,26 @@ unsigned Segment::write(char* data) {
   logd("Wrote to block %u of segment %u", free_block_, id_);
 
   return free_block_++;
+}
+
+void Segment::write_uint(char *b, unsigned x) {
+  b[0] = static_cast<char>(x);
+  b[1] = static_cast<char>(x >> 8);
+  b[2] = static_cast<char>(x >> 16);
+  b[3] = static_cast<char>(x >> 24);
+}
+
+void Segment::add_file(unsigned inode_id, unsigned block_id) {
+  for (unsigned i = 0; i < 8; i++) {
+    Block &block = blocks_[i];
+    for (unsigned j = 0; j < block.size(); j += 8) {
+      if (bytes_to_uint(&block[j+4]) == 0) {
+        write_uint(&block.data()[j], inode_id);
+        write_uint(&block.data()[j+4], block_id);
+        return;
+      }
+    }
+  }
 }
 
 void Segment::commit() {

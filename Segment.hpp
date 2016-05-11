@@ -13,6 +13,10 @@ class Segment {
   unsigned write(char *);
   inline int id() { return id_; }
   void commit();
+  void add_file(unsigned, unsigned);
+
+private:
+  void write_uint(char *, unsigned);
 
  private:
   std::vector<Block> blocks_;

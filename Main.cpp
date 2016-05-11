@@ -70,6 +70,12 @@ exitstatus Controller::execute_command(std::string cmd) {
     bool status = fs_.remove(tokenized.at(1));
     if (status) return OKAY;
   }
+  if (tokenized.at(0) == "display") {
+    if (tokenized.size() != 4) return BAD_LEN;
+    bool status = fs_.display(tokenized.at(1), tokenized.at(2), tokenized.at(3));
+    if (status) return OKAY;
+    return FS_ERROR;
+  }
   if (tokenized.at(0) == "list" || tokenized.at(0) == "ls") {
     if (tokenized.size() != 1) return BAD_LEN;
     std::string output = fs_.list();

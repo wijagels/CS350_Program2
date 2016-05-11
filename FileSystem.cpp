@@ -127,6 +127,22 @@ bool FileSystem::remove(std::string file) {
   return true;
 }
 
+/*
+ * display <lfs_filename> <howmany> <start>
+ *
+ * Read and display <howmany> bytes from file <lfs_filename> 
+ * beginning at logical byte <start>. 
+ *
+ * Display the bytes on the screen.
+ */
+std::string FileSystem::display(std::string file, uint, uint) {
+  unsigned inode = dir_.lookup_file(file);
+  if (inode == -1) {
+    return false;
+  }
+
+}
+
 std::string FileSystem::list() {
   const int COL_WIDTH = 20;
   std::stringstream ss;

@@ -32,6 +32,7 @@ Imap::Imap() : map_{} {
 }
 
 unsigned& Imap::operator[](int i) { return map_[i]; }
+const unsigned& Imap::operator[](int i) const { return map_[i]; }
 
 bool Imap::is_full() { return next_inode() == 10240; }
 

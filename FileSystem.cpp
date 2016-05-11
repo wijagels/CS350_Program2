@@ -172,63 +172,92 @@ std::string FileSystem::list() {
  * Where n is the segment number to be cleaned
  *
  */
-bool FileSystem::clean(unsigned segment_id) {
+bool FileSystem::clean(unsigned segments) {
   using Kind = Segment::MetaBlock::Kind;
-  assert(0 <= segment_id && segment_id <= 31);
-  Segment to_clean(segment_id, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE);
-
-  // Clean and get live data, write to disk
-  auto live_data = to_clean.clean(imap_);
-  to_clean.commit();
+  assert(1 <= segments && segments <= 32);
 
   std::fstream checkpoint("DRIVE/CHECKPOINT_REGION", std::ios::binary | std::ios::in |
                           std::ios::out);
   assert(checkpoint.is_open());
 
-  unsigned t;
-  Inode *inode;
-  // Go through live data and make updates appropriately
-  for (auto &meta: live_data) {
-    switch (meta.kind) {
-    case Kind::FILE:
-      // Go to inode id and change the old block
-      // Log meta.block, inode, and imap sector
-      // WARN Write new imap sector and then logging IMAP sectors later on in this
-      // list will cause inaccuracies
-      inode = new Inode(imap_[meta.id]);
+  // Commit current segment and load up a clean one
+  std::vector<bool> written(32, false);
+  segment_->commit();
+  for (size_t s = 0; s < live_segs_.size(); s++) {
+    if (!live_segs_[s]) {
+      // Set it to being used
+      live_segs_[s] = true;
 
-      t = log(meta.block.data());
-      for (size_t i = 0; i < inode->size(); i++) {
-        if ((*inode)[i] == meta.loc) {
-          (*inode)[i] = t;
-          break;
-        }
-      }
+      // Write segment to drive
+      segment_->commit();
 
-      t = log(*inode);
-      imap_[meta.id] = t;
-      log_imap_sector(4 * meta.id / BLOCK_SIZE);
-
-      delete inode;
-      inode = nullptr;
-      break;
-    case Kind::INODE:
-      // Log block
-      // Go to imap[id] and change entry to logged block
-      // Log imap sector
-      t = log(meta.block.data());
-      imap_[meta.id] = t;
-      log_imap_sector(4 * meta.id / BLOCK_SIZE);
-      break;
-    case Kind::IMAP:
-      // Log block and update checkpoint region
-      // Lazy af
-      log_imap_sector(meta.id);
-      break;
-    default:
-      assert(false);
-      break;
+      // Get a new segment
+      segment_ =
+        SegmentPtr(new Segment(s, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE));
     }
+  }
+  written[segment_->id()] = true;
+
+  unsigned cleaned = 0;
+  for (size_t s = 0; cleaned < segments && s < live_segs_.size(); s++) {
+    if (!live_segs_[s] || s == static_cast<unsigned>(segment_->id()) || written[s]) {
+      continue;
+    }
+
+    Segment to_clean(s, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE);
+
+    // Clean and get live data, write to disk
+    auto live_data = to_clean.clean(imap_);
+    to_clean.commit();
+    live_segs_[s] = false;
+
+    unsigned t;
+    Inode *inode;
+    // Go through live data and make updates appropriately
+    for (auto &meta: live_data) {
+      switch (meta.kind) {
+      case Kind::FILE:
+        // Go to inode id and change the old block
+        // Log meta.block, inode, and imap sector
+        // WARN Write new imap sector and then logging IMAP sectors later on in this
+        // list will cause inaccuracies
+        inode = new Inode(imap_[meta.id]);
+
+        t = log(meta.block.data());
+        for (size_t i = 0; i < inode->size(); i++) {
+          if ((*inode)[i] == meta.loc) {
+            (*inode)[i] = t;
+            break;
+          }
+        }
+
+        t = log(*inode);
+        imap_[meta.id] = t;
+        log_imap_sector(4 * meta.id / BLOCK_SIZE);
+
+        delete inode;
+        inode = nullptr;
+        break;
+      case Kind::INODE:
+        // Log block
+        // Go to imap[id] and change entry to logged block
+        // Log imap sector
+        t = log(meta.block.data());
+        imap_[meta.id] = t;
+        log_imap_sector(4 * meta.id / BLOCK_SIZE);
+        break;
+      case Kind::IMAP:
+        // Log block and update checkpoint region
+        // Lazy af
+        log_imap_sector(meta.id);
+        break;
+      default:
+        assert(false);
+        break;
+      }
+    }
+    written[segment_->id()] = true;
+    cleaned++;
   }
 
   checkpoint.close();

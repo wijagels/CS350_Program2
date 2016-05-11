@@ -169,14 +169,70 @@ std::string FileSystem::list() {
 /*
  * clean <n>
  *
- * Where n is the number of segments to consider for cleaning
+ * Where n is the segment number to be cleaned
  *
  */
-bool FileSystem::clean(unsigned segments) {
-  for (unsigned i = 0; i < segments; i++) {
-    segment_ =
-        SegmentPtr{new Segment{i, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE}};
+bool FileSystem::clean(unsigned segment_id) {
+  using Kind = Segment::MetaBlock::Kind;
+  assert(0 <= segment_id && segment_id <= 31);
+  Segment to_clean(segment_id, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE);
+
+  // Clean and get live data, write to disk
+  auto live_data = to_clean.clean(imap_);
+  to_clean.commit();
+
+  std::fstream checkpoint("DRIVE/CHECKPOINT_REGION", std::ios::binary | std::ios::in |
+                          std::ios::out);
+  assert(checkpoint.is_open());
+
+  unsigned t;
+  Inode *inode;
+  // Go through live data and make updates appropriately
+  for (auto &meta: live_data) {
+    switch (meta.kind) {
+    case Kind::FILE:
+      // Go to inode id and change the old block
+      // Log meta.block, inode, and imap sector
+      // WARN Write new imap sector and then logging IMAP sectors later on in this
+      // list will cause inaccuracies
+      inode = new Inode(imap_[meta.id]);
+
+      t = log(meta.block.data());
+      for (size_t i = 0; i < inode->size(); i++) {
+        if ((*inode)[i] == meta.loc) {
+          (*inode)[i] = t;
+          break;
+        }
+      }
+
+      t = log(*inode);
+      imap_[meta.id] = t;
+      log_imap_sector(4 * meta.id / BLOCK_SIZE);
+
+      delete inode;
+      inode = nullptr;
+      break;
+    case Kind::INODE:
+      // Log block
+      // Go to imap[id] and change entry to logged block
+      // Log imap sector
+      t = log(meta.block.data());
+      imap_[meta.id] = t;
+      log_imap_sector(4 * meta.id / BLOCK_SIZE);
+      break;
+    case Kind::IMAP:
+      // Log block and update checkpoint region
+      // Lazy af
+      log_imap_sector(meta.id);
+      break;
+    default:
+      assert(false);
+      break;
+    }
   }
+
+  checkpoint.close();
+
   return true;
 }
 

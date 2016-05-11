@@ -8,6 +8,7 @@ class Imap {
  public:
   Imap();
   unsigned& operator[](int);
+  const unsigned& operator[](int) const;
   bool is_full();
   unsigned next_inode();
 

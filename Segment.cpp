@@ -8,6 +8,7 @@
 #include "./debug.h"
 
 #include "FileSystem.hpp"
+#include "Inode.hpp"
 
 Segment::Segment(unsigned id, unsigned blocks, unsigned block_sz)
     : blocks_{}, free_block_{8}, id_{id} {
@@ -93,4 +94,58 @@ void Segment::commit() {
   seg_file.close();
 
   logd("Commit segment %u", id_);
+}
+
+std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
+  std::vector<MetaBlock> live;
+
+  for (auto summ = blocks_.begin(); summ != blocks_.begin() + 8; summ++) {
+    for (size_t i = 0; i < summ->size(); i+=8) {
+      unsigned id = bytes_to_uint(&(*summ)[i]);
+      unsigned block_n = bytes_to_uint(&(*summ)[i+4]);
+      if (block_n != 0) {
+        if (id < 10240) {
+          // Either an inode block or part of a file
+          // Check if imap[id] == block_n => inode block
+          //   then copy block to live as inode id
+          // Check if inode *id* has block_n in its blocks => file piece
+          //   then copy block to live as file assoc with inode id
+          Inode inode(id);
+          if (imap[id] == block_n) {
+            live.push_back(MetaBlock(MetaBlock::Kind::INODE, id, block_n,
+                                     blocks_[block_n % blocks_.size()]));
+          } else if (inode.has_block(block_n)) {
+            live.push_back(MetaBlock(MetaBlock::Kind::FILE, id, block_n,
+                                     blocks_[block_n % blocks_.size()]));
+          }
+        } else {
+          // Part of the imap
+          // Check if block_n is in the checkpoint region
+          // If true, copy block_n to live with imap id
+          std::ifstream chkpt("DRIVE/CHECKPOINT_REGION", std::ios::binary);
+          assert(chkpt.is_open());
+
+          for (unsigned j = 0; j < 40; j++) {
+            char buf[4];
+            unsigned mid;
+            chkpt.read(buf, 4);
+            mid = bytes_to_uint(buf);
+
+            if (mid == block_n) {
+              live.push_back(MetaBlock(MetaBlock::Kind::IMAP, j, block_n,
+                                       blocks_[block_n % blocks_.size()]));
+              break;
+            }
+          }
+          chkpt.close();
+        }
+      }
+    }
+  }
+
+  for (auto it = blocks_.begin(); it != blocks_.begin() + 8; it++) {
+    *it = Block(it->size(), 0);
+  }
+
+  return live;
 }

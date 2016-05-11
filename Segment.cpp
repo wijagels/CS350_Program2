@@ -112,10 +112,10 @@ std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
           //   then copy block to live as file assoc with inode id
           Inode inode(id);
           if (imap[id] == block_n) {
-            live.push_back(MetaBlock(MetaBlock::Kind::INODE, block_n,
+            live.push_back(MetaBlock(MetaBlock::Kind::INODE, id, block_n,
                                      blocks_[block_n % blocks_.size()]));
           } else if (inode.has_block(block_n)) {
-            live.push_back(MetaBlock(MetaBlock::Kind::FILE, block_n,
+            live.push_back(MetaBlock(MetaBlock::Kind::FILE, id, block_n,
                                      blocks_[block_n % blocks_.size()]));
           }
         } else {
@@ -132,7 +132,7 @@ std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
             mid = bytes_to_uint(buf);
 
             if (mid == block_n) {
-              live.push_back(MetaBlock(MetaBlock::Kind::IMAP, block_n,
+              live.push_back(MetaBlock(MetaBlock::Kind::IMAP, j, block_n,
                                        blocks_[block_n % blocks_.size()]));
               break;
             }
@@ -146,7 +146,6 @@ std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
   for (auto it = blocks_.begin(); it != blocks_.begin() + 8; it++) {
     *it = Block(it->size(), 0);
   }
-
 
   return live;
 }

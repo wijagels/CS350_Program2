@@ -50,3 +50,7 @@ bool Inode::has_block(Blockid id) const {
   }
   return false;
 }
+
+size_t Inode::size() const {
+  return blocks_.size();
+}

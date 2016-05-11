@@ -12,11 +12,13 @@ class Segment {
   struct MetaBlock {
     enum class Kind { IMAP, INODE, FILE };
     Kind kind;
+    unsigned id;
     unsigned loc;
     Block block;
 
     MetaBlock() = delete;
-    MetaBlock(Kind k, unsigned l, const Block& b): kind(k), loc(l), block(b) {}
+    MetaBlock(Kind k, unsigned id, unsigned l, const Block& b):
+      kind(k), id(id), loc(l), block(b) {}
   };
 
   Segment() = delete;

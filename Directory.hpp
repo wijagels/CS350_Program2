@@ -5,6 +5,7 @@
 #include <fstream>
 #include <map>
 #include <vector>
+#include <utility>
 
 #include "Imap.hpp"
 
@@ -13,21 +14,17 @@ class Directory {
   Directory();
   explicit Directory(std::string);
   ~Directory();
-  unsigned add_file(std::string, unsigned);
+  unsigned add_file(std::string, unsigned, unsigned);
   unsigned lookup_file(std::string);
   unsigned remove_file(std::string);
   std::vector<unsigned> dump_inodes();
-  
-  // TODO
-  // Change to map<std::string, std::pair<unsigned, unsigned> >
-  std::map<std::string, unsigned> get_map() { return dir_map_; }
+  std::map<std::string, std::pair<unsigned, unsigned> > get_map() { return dir_map_; }
 
  protected:
   void write_out(void);
   std::string dir_file_name_;
   std::fstream dir_file_;
 
-  // TODO
-  // Change to map<std::string, std::pair<unsigned, unsigned> >
-  std::map<std::string, unsigned> dir_map_;
+  // < filename <inode num, filesize> >
+  std::map<std::string, std::pair<unsigned, unsigned> > dir_map_;
 };

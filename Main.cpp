@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
     }
   }
   Controller c;
+  std::cout << "\nyou@your-comp:~/SARUDE-DANDSTORM-ORIGINAL-MIX/DRIVE$ ";
   return c.parse_commands() == true ? 0 : 1;
 }
 
@@ -46,13 +47,14 @@ bool Controller::parse_commands() {
         status = false;
         break;
       case FS_ERROR:
-        std::cerr << "Filesystem Erorr" << std::endl;
+        std::cerr << "Filesystem Error" << std::endl;
         break;
       case EXIT:
         return status;
     }
+    output_ << "\nyou@your-comp:~/SARUDE-DANDSTORM-ORIGINAL-MIX/DRIVE$ ";
   }
-  return status;
+  return fs_.exit();
 }
 
 // TODO(will): add support for other commands when they're added to FS
@@ -69,12 +71,27 @@ exitstatus Controller::execute_command(std::string cmd) {
     if (tokenized.size() != 2) return BAD_LEN;
     bool status = fs_.remove(tokenized.at(1));
     if (status) return OKAY;
+    return FS_ERROR;
   }
-  if (tokenized.at(0) == "list") {
+  if (tokenized.at(0) == "display") {
+    if (tokenized.size() != 4) return BAD_LEN;
+    std::string output =
+        fs_.display(tokenized.at(1), std::stoul(tokenized.at(2)),
+                    std::stoul(tokenized.at(3)));
+    output_ << output << std::endl;
+    return OKAY;
+  }
+  if (tokenized.at(0) == "list" || tokenized.at(0) == "ls") {
     if (tokenized.size() != 1) return BAD_LEN;
     std::string output = fs_.list();
     output_ << output << std::endl;
     return OKAY;
+  }
+  if (tokenized.at(0) == "clean") {
+    if (tokenized.size() != 2) return BAD_LEN;
+    bool status = fs_.clean(std::stoul(tokenized.at(1)));
+    if (status) return OKAY;
+    return FS_ERROR;
   }
   if (tokenized.at(0) == "exit") {
     if (tokenized.size() != 1) return BAD_LEN;
@@ -86,6 +103,11 @@ exitstatus Controller::execute_command(std::string cmd) {
     if (tokenized.size() != 2) return BAD_LEN;
     Directory d;
     std::cout << d.lookup_file(tokenized.at(1)) << std::endl;
+    return OKAY;
+  }
+  if (tokenized.at(0) == "cat") {
+    if (tokenized.size() != 2) return BAD_LEN;
+    std::cout << fs_.cat(tokenized.at(1)) << std::endl;
     return OKAY;
   }
   return NOT_CMD;

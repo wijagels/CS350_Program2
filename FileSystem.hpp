@@ -26,6 +26,7 @@ class FileSystem {
   std::string display(std::string, uint, uint);
   bool overwrite(std::string, uint, uint, char);
   std::string list();
+  bool clean(unsigned);
   bool exit();
 
  private:

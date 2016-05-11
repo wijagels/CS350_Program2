@@ -3,7 +3,7 @@
 # William Jagels
 
 CFLAGS=-g -Wall -Wextra -pedantic -std=gnu11
-CXXFLAGS=-g -Wall -Wextra -pedantic -std=c++11
+CXXFLAGS=-g -Wall -Wextra -pedantic -std=gnu++11
 SRCEXT=cpp
 HEADEREXT=hpp
 LDFLAGS=
@@ -30,13 +30,27 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 clean:
-	-rm $(EXECUTABLE) *.o
+	-rm $(EXECUTABLE) *.o *.d
 
-test: all
+test: all initialize
+	printf "list\nexit" | $(RUN)
+	printf "import import/image.jpg img\nexit" | $(RUN)
+	printf "list\nexit" | $(RUN)
+	printf "cat img\nexit" | $(RUN)
+
+initialize: all
 	$(RUN) initialize
-	echo "list" | $(RUN)
 
 lint: $(SOURCES) $(HEADERS)
 	cpplint $^
+
+
+%.d: %.cpp
+	@set -e; rm -f $@; \
+	$(CXX) -MM $(CXXFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+-include $(SOURCES:%.cpp=%.d)
 
 .PHONY: clean

@@ -55,14 +55,21 @@ FileSystem::FileSystem(uint segment_count, uint segment_size, uint block_size,
 
 bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   assert(!imap_.is_full());
-
+  if (imap_.is_full()) {
+    loge("Imap is full, please delete some files");
+    return false;
+  }
   std::ifstream file(linux_file, std::ios::binary);
   assert(file.is_open());
-  if (!file.is_open()) return false;
+  if (!file.is_open()) {
+    loge("Failed to open file: %s", linux_file.c_str());
+    return false;
+  }
   file.seekg(0, std::ios::end);
   std::streampos size = file.tellg();
   logd("File size %d", static_cast<int>(size));
   if (size > MAX_FILE_SIZE) {
+    loge("%u bytes is too large", static_cast<unsigned>(size));
     return false;
   }
   char *buf = new char[size];
@@ -193,11 +200,18 @@ bool FileSystem::exit() {
 std::string FileSystem::cat(std::string filename) {
   segment_->commit();
   unsigned inum = dir_.lookup_file(filename);
-  logd("%u", inum);
   assert(inum != (unsigned)-1);
+  if (inum == (unsigned)-1) {
+    loge("File does not exist!");
+    return "";
+  }
   unsigned blockid = imap_[inum];
   logd("Getting inode %u:%u", inum, blockid);
   assert(blockid != (unsigned)-1);
+  if (blockid == (unsigned)-1) {
+    loge("Inode points to invalid block");
+    return "";
+  }
   Inode inode{blockid};
   std::stringstream ss;
   for (size_t i = 0; i < 128; i++) {
@@ -225,6 +239,10 @@ void fs_read_block(char *block, uint block_num) {
        block_num, seg_num, seg_ind * 1024, ss.str().c_str());
   std::ifstream seg(ss.str(), std::ios::binary);
   assert(seg.is_open());
+  if (seg.is_open()) {
+    loge("Segment is not open");
+    throw;
+  }
 
   seg.seekg(seg_ind * 1024, std::ios::beg);
   seg.read(block, 1024);

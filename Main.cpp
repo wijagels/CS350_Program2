@@ -24,6 +24,10 @@ int main(int argc, char** argv) {
     } else {
       std::ifstream file{argv[1]};
       assert(file.is_open());
+      if (!file.is_open()) {
+        loge("Failed to open input file");
+        return 1;
+      }
       Controller c{file, std::cout};
       return !c.parse_commands();
     }

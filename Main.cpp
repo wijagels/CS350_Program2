@@ -24,6 +24,7 @@ int main(int argc, char** argv) {
     }
   }
   Controller c;
+  std::cout << "\nyou@your-comp:~/SARUDE-DANDSTORM-ORIGINAL-MIX/DRIVE$ ";
   return c.parse_commands() == true ? 0 : 1;
 }
 
@@ -46,11 +47,12 @@ bool Controller::parse_commands() {
         status = false;
         break;
       case FS_ERROR:
-        std::cerr << "Filesystem Erorr" << std::endl;
+        std::cerr << "Filesystem Error" << std::endl;
         break;
       case EXIT:
         return status;
     }
+    output_ << "\nyou@your-comp:~/SARUDE-DANDSTORM-ORIGINAL-MIX/DRIVE$ ";
   }
   return fs_.exit();
 }

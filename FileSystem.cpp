@@ -103,7 +103,7 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   logd("%u", n_loc);
   log_imap_sector(4 * m_loc / BLOCK_SIZE);
   // Add the inode to the directory listing
-  dir_.add_file(lfs_file, m_loc);
+  dir_.add_file(lfs_file, m_loc, static_cast<int>(size));
 
   /* For testing purposes */
   // std::ofstream fout;
@@ -146,16 +146,12 @@ std::string FileSystem::display(std::string file, uint howmany, uint start) {
 std::string FileSystem::list() {
   const int COL_WIDTH = 20;
   std::stringstream ss;
-  ss << "\n== List of Files ==" << std::endl;
   ss << std::setw(COL_WIDTH) << "Filename" << std::setw(COL_WIDTH) << "inode"
      << std::setw(COL_WIDTH) << "Filesize" << std::endl;
-  for (uint i = 0; i < COL_WIDTH * 3; i++) {
-    ss << "-";
-  }
-  ss << std::endl;
+  ss << std::setfill('-') << std::setw(COL_WIDTH * 3) << "-" << std::endl << std::setfill(' ');
   for (const auto &e : dir_.get_map()) {
-    ss << std::setw(COL_WIDTH) << e.first << std::setw(COL_WIDTH) << e.second
-       << std::setw(COL_WIDTH) << "<filesize>" << std::endl;
+    ss << std::setw(COL_WIDTH) << e.first << std::setw(COL_WIDTH) << e.second.first
+       << std::setw(COL_WIDTH) << e.second.second << std::endl;
   }
   ss << std::endl;
   return ss.str();

@@ -135,11 +135,12 @@ bool FileSystem::remove(std::string file) {
  *
  * Display the bytes on the screen.
  */
-std::string FileSystem::display(std::string file, uint, uint) {
+std::string FileSystem::display(std::string file, uint howmany, uint start) {
   unsigned inode = dir_.lookup_file(file);
   if (inode == -1) {
     return " ";
   }
+  return "DISPLAY BLAH";
 }
 
 std::string FileSystem::list() {

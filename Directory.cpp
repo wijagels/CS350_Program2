@@ -18,7 +18,7 @@ Directory::Directory(std::string file)
   std::string line;
   while (getline(dir_file_, line)) {
     auto tokenized = split(line, ':');
-    add_file(tokenized.at(0), stoi(tokenized.at(1)));
+    add_file(tokenized.at(0), stoi(tokenized.at(1)), stoi(tokenized.at(2)));
   }
   dir_file_.close();
 }
@@ -31,18 +31,18 @@ void Directory::write_out(void) {
   dir_file_.open(dir_file_name_, std::ios::out | std::ios::trunc);
   assert(dir_file_.is_open());
   for (auto e : dir_map_) {
-    dir_file_ << e.first << ":" << e.second << std::endl;
+    dir_file_ << e.first << ":" << e.second.first << ":" << e.second.second << std::endl;
   }
 }
 
-unsigned Directory::add_file(std::string name, unsigned inode) {
-  dir_map_.insert({name, inode});
+unsigned Directory::add_file(std::string name, unsigned inode, unsigned filesize) {
+  dir_map_.insert({name, std::pair<unsigned, unsigned>{inode, filesize}});
   return inode;
 }
 
 unsigned Directory::lookup_file(std::string name) {
   try {
-    return dir_map_.at(name);
+    return dir_map_.at(name).first;
   } catch (std::out_of_range) {
     return -1;
   }
@@ -50,7 +50,7 @@ unsigned Directory::lookup_file(std::string name) {
 
 unsigned Directory::remove_file(std::string name) {
   try {
-    unsigned deleted = dir_map_.at(name);
+    unsigned deleted = dir_map_.at(name).first;
     dir_map_.erase(name);
     return deleted;
   } catch (std::out_of_range) {
@@ -61,7 +61,7 @@ unsigned Directory::remove_file(std::string name) {
 std::vector<unsigned> Directory::dump_inodes() {
   std::vector<unsigned> inodes;
   for (auto e : dir_map_) {
-    inodes.push_back(e.second);
+    inodes.push_back(e.second.first);
   }
   return inodes;
 }

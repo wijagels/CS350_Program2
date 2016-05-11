@@ -146,13 +146,9 @@ std::string FileSystem::display(std::string file, uint howmany, uint start) {
 std::string FileSystem::list() {
   const int COL_WIDTH = 20;
   std::stringstream ss;
-  ss << "\n== List of Files ==" << std::endl;
   ss << std::setw(COL_WIDTH) << "Filename" << std::setw(COL_WIDTH) << "inode"
      << std::setw(COL_WIDTH) << "Filesize" << std::endl;
-  for (uint i = 0; i < COL_WIDTH * 3; i++) {
-    ss << "-";
-  }
-  ss << std::endl;
+  ss << std::setfill('-') << std::setw(COL_WIDTH * 3) << "-" << std::endl << std::setfill(' ');
   for (const auto &e : dir_.get_map()) {
     ss << std::setw(COL_WIDTH) << e.first << std::setw(COL_WIDTH) << e.second
        << std::setw(COL_WIDTH) << "<filesize>" << std::endl;

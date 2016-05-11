@@ -239,7 +239,7 @@ void fs_read_block(char *block, uint block_num) {
        block_num, seg_num, seg_ind * 1024, ss.str().c_str());
   std::ifstream seg(ss.str(), std::ios::binary);
   assert(seg.is_open());
-  if (seg.is_open()) {
+  if (!seg.is_open()) {
     loge("Segment is not open");
     throw;
   }

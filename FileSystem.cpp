@@ -92,6 +92,9 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
     }
   }
 
+  // Store the inode in the imap
+  auto m_loc = imap_.next_inode();
+
   // Create a new inode
   Inode node(lfs_file, static_cast<unsigned>(size));
   // For each block from lin_fn
@@ -102,12 +105,11 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
     logd("Destination block: [%u]:%u", i, b_loc);
     // Store the blocks in the inode
     node[i] = b_loc;
+    segment_->add_file(m_loc, b_loc);
   }
 
   // Then write the inode to a block
   auto n_loc = log(node);
-  // Store the inode in the imap
-  auto m_loc = imap_.next_inode();
   imap_[m_loc] = n_loc;
   // Update the imap and update the checkpoint region
   logd("%u", m_loc);
@@ -299,8 +301,8 @@ std::string FileSystem::cat(std::string filename) {
   }
   Inode inode{blockid};
   std::stringstream ss;
+  char block[1025];
   for (size_t i = 0; i < 128; i++) {
-    char block[1024];
     // logd("Access block [%zu]:%u", i, inode[i]);
     fs_read_block(block, inode[i]);
     block[1024] = '\0';
@@ -410,6 +412,7 @@ void FileSystem::log_imap_sector(uint sector) {
     data[4 * i + 3] = static_cast<char>(imap_[start + i] >> 24);
   }
   uint m_loc = log(data);
+  segment_->add_file(-1, m_loc);
   logd("New imap segment written to block %u", m_loc);
   char m_loc_bytes[4];
   m_loc_bytes[0] = static_cast<char>(m_loc);

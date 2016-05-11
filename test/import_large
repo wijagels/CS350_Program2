@@ -5,3 +5,4 @@ cat lorem
 display lorem 11 0
 remove lorem
 ls
+exit

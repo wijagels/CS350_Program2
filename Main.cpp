@@ -71,10 +71,13 @@ exitstatus Controller::execute_command(std::string cmd) {
     if (tokenized.size() != 2) return BAD_LEN;
     bool status = fs_.remove(tokenized.at(1));
     if (status) return OKAY;
+    return FS_ERROR;
   }
   if (tokenized.at(0) == "display") {
     if (tokenized.size() != 4) return BAD_LEN;
-    std::string output = fs_.display(tokenized.at(1), std::stoul(tokenized.at(2)), std::stoul(tokenized.at(3)));
+    std::string output =
+        fs_.display(tokenized.at(1), std::stoul(tokenized.at(2)),
+                    std::stoul(tokenized.at(3)));
     output_ << output << std::endl;
     return OKAY;
   }
@@ -83,6 +86,12 @@ exitstatus Controller::execute_command(std::string cmd) {
     std::string output = fs_.list();
     output_ << output << std::endl;
     return OKAY;
+  }
+  if (tokenized.at(0) == "clean") {
+    if (tokenized.size() != 2) return BAD_LEN;
+    bool status = fs_.clean(std::stoul(tokenized.at(1)));
+    if (status) return OKAY;
+    return FS_ERROR;
   }
   if (tokenized.at(0) == "exit") {
     if (tokenized.size() != 1) return BAD_LEN;

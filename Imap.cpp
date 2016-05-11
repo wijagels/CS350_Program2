@@ -1,11 +1,10 @@
 /* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "Imap.hpp"
 
-#include <assert.h>
-
+#include <cassert>
 #include <fstream>
 
-#include "debug.h"
+#include "./debug.h"
 #include "FileSystem.hpp"
 
 Imap::Imap() : map_{} {

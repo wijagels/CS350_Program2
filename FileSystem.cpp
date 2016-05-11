@@ -107,6 +107,8 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   log_imap_sector(4 * m_loc / BLOCK_SIZE);
   // Add the inode to the directory listing
   dir_.add_file(lfs_file, m_loc, static_cast<int>(size));
+  // Inform the segment of the new file
+  segment_->add_file(m_loc, n_loc);
 
   delete[] buf;
   return true;
@@ -133,10 +135,11 @@ bool FileSystem::remove(std::string file) {
  */
 std::string FileSystem::display(std::string file, uint howmany, uint start) {
   unsigned inode = dir_.lookup_file(file);
-  if (inode == -1) {
-    return " ";
+  if (inode == (unsigned)-1) {
+    return "Not a file!";
   }
-  return "DISPLAY BLAH";
+  std::string result = cat(file);
+  return result.substr(start, howmany);
 }
 
 std::string FileSystem::list() {
@@ -153,6 +156,20 @@ std::string FileSystem::list() {
   }
   ss << std::endl;
   return ss.str();
+}
+
+/*
+ * clean <n>
+ *
+ * Where n is the number of segments to consider for cleaning
+ *
+ */
+bool FileSystem::clean(unsigned segments) {
+  for (unsigned i = 0; i < segments; i++) {
+    segment_ =
+        SegmentPtr{new Segment{i, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE}};
+  }
+  return true;
 }
 
 bool FileSystem::exit() {

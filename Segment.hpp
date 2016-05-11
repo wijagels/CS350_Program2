@@ -14,11 +14,10 @@ class Segment {
   inline int id() { return id_; }
   void commit();
   void add_file(unsigned, unsigned);
-
-private:
-  void write_uint(char *, unsigned);
+  void remove_file(unsigned);
 
  private:
+  void write_uint(char *, unsigned);
   std::vector<Block> blocks_;
   unsigned free_block_;
   unsigned id_;

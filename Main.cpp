@@ -52,7 +52,7 @@ bool Controller::parse_commands() {
         return status;
     }
   }
-  return status;
+  return fs_.exit();
 }
 
 // TODO(will): add support for other commands when they're added to FS

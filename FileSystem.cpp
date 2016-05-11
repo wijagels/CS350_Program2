@@ -99,8 +99,8 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   auto m_loc = imap_.next_inode();
   imap_[m_loc] = n_loc;
   // Update the imap and update the checkpoint region
-  logd("%lu", m_loc);
-  logd("%lu", n_loc);
+  logd("%u", m_loc);
+  logd("%u", n_loc);
   log_imap_sector(4 * m_loc / BLOCK_SIZE);
   // Add the inode to the directory listing
   dir_.add_file(lfs_file, m_loc);
@@ -118,7 +118,7 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
 
 bool FileSystem::remove(std::string file) {
   unsigned inode = dir_.lookup_file(file);
-  if (inode == -1) {
+  if (inode == (unsigned)-1) {
     return false;
   }
   dir_.remove_file(file);
@@ -130,17 +130,16 @@ bool FileSystem::remove(std::string file) {
 /*
  * display <lfs_filename> <howmany> <start>
  *
- * Read and display <howmany> bytes from file <lfs_filename> 
- * beginning at logical byte <start>. 
+ * Read and display <howmany> bytes from file <lfs_filename>
+ * beginning at logical byte <start>.
  *
  * Display the bytes on the screen.
  */
 std::string FileSystem::display(std::string file, uint, uint) {
   unsigned inode = dir_.lookup_file(file);
   if (inode == -1) {
-    return false;
+    return " ";
   }
-
 }
 
 std::string FileSystem::list() {
@@ -181,18 +180,22 @@ bool FileSystem::exit() {
 std::string FileSystem::cat(std::string filename) {
   segment_->commit();
   unsigned inum = dir_.lookup_file(filename);
-  logd("%d", inum);
+  logd("%u", inum);
   assert(inum != -1);
   unsigned blockid = imap_[inum];
+  logd("Getting inode %u:%u", inum, blockid);
   assert(blockid != -1);
   Inode inode{blockid};
   std::stringstream ss;
-  for (size_t i = 1; i < 2; i++) {
-    char block[128];
-    fs_read_block(block, 0);
-    logd("Access block %s", block);
+  for (size_t i = 0; i < 128; i++) {
+    char block[1024];
+    if (inode[i] > MAX_FILES) break;
+    fs_read_block(block, inode[i]);
+    logd("Access block %u", inode[i]);
+    logd("block %s", block);
     ss << block;
   }
+  ss << std::endl;
   return ss.str();
 }
 

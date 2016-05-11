@@ -3,7 +3,7 @@
 # William Jagels
 
 CFLAGS=-g -Wall -Wextra -pedantic -std=gnu11
-CXXFLAGS=-g -Wall -Wextra -pedantic -std=c++11
+CXXFLAGS=-g -Wall -Wextra -pedantic -std=gnu++11
 SRCEXT=cpp
 HEADEREXT=hpp
 LDFLAGS=
@@ -34,6 +34,9 @@ clean:
 
 test: all initialize
 	echo "list" | $(RUN)
+	echo "import import/image.jpg img" | $(RUN)
+	echo "list" | $(RUN)
+	echo "cat img" | $(RUN)
 
 initialize: all
 	$(RUN) initialize

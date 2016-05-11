@@ -143,5 +143,10 @@ std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
     }
   }
 
+  for (auto it = blocks_.begin(); it != blocks_.begin() + 8; it++) {
+    *it = Block(it->size(), 0);
+  }
+
+
   return live;
 }

@@ -1,0 +1,6 @@
+ls
+import import/small.txt small
+ls
+cat small
+remove small
+ls

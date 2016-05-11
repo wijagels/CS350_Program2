@@ -1,0 +1,7 @@
+ls
+import import/lorem.txt lorem
+ls
+cat lorem
+display lorem 11 0
+remove lorem
+ls

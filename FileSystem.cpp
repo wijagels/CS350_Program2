@@ -58,6 +58,7 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
 
   std::ifstream file(linux_file, std::ios::binary);
   assert(file.is_open());
+  if (!file.is_open()) return false;
   file.seekg(0, std::ios::end);
   std::streampos size = file.tellg();
   logd("File size %d", static_cast<int>(size));

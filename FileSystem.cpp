@@ -75,6 +75,8 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
       logd("Final block %d, end %d", BLOCK_SIZE * i, (unsigned)size);
       blocks[i].insert(blocks[i].end(), &buf[BLOCK_SIZE * i],
                        &buf[(unsigned)size]);
+      // 0-pad the vector
+      blocks[i].resize(BLOCK_SIZE, 0);
     } else {
       logd("Start %d, end %d", BLOCK_SIZE * i, BLOCK_SIZE * (i + 1));
       blocks[i].insert(blocks[i].end(), &buf[BLOCK_SIZE * i],
@@ -184,6 +186,7 @@ std::string FileSystem::cat(std::string filename) {
     char block[1024];
     // logd("Access block [%zu]:%u", i, inode[i]);
     fs_read_block(block, inode[i]);
+    block[1024] = '\0';
     // logd("block %s", block);
     ss << block;
   }
@@ -241,10 +244,10 @@ int FileSystem::log(const Inode &inode) {
   assert(filename_len + data_len <= BLOCK_SIZE);
 
   char data[BLOCK_SIZE];
+  std::fill(data, data + BLOCK_SIZE, 0);
   const char *filename = inode.filename().c_str();
 
   // Populate first 4 bytes with filesize
-  // data[0] = inode.filesize();
   data[0] = static_cast<char>(inode.filesize());
   data[1] = static_cast<char>(inode.filesize() >> 8);
   data[2] = static_cast<char>(inode.filesize() >> 16);
@@ -267,9 +270,9 @@ int FileSystem::log(const Inode &inode) {
     data[iter + j * 4 + 3] = static_cast<char>(inode[j] >> 24);
   }
   // Pad rest with 0s
-  for (uint k = filename_len + data_len; k < BLOCK_SIZE; k++) {
-    data[k] = 0;
-  }
+  // for (uint k = filename_len + data_len; k < BLOCK_SIZE; k++) {
+  //   data[k] = 0;
+  // }
 
   return log(data);
 }

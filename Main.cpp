@@ -1,9 +1,12 @@
 /* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <sstream>
+#include <cassert>
 
+#include "./debug.h"
 #include "Controller.hpp"
 #include "FileSystem.hpp"
 #include "Initializer.hpp"
@@ -19,13 +22,19 @@ int main(int argc, char** argv) {
       initialize_fs();
       return 0;
     } else {
-      std::cerr << "Invalid number of arguments" << std::endl;
-      exit(1);
+      std::ifstream file{argv[1]};
+      assert(file.is_open());
+      if (!file.is_open()) {
+        loge("Failed to open input file");
+        return 1;
+      }
+      Controller c{file, std::cout};
+      return !c.parse_commands();
     }
   }
   Controller c;
   std::cout << "\nyou@your-comp:~/SARUDE-DANDSTORM-ORIGINAL-MIX/DRIVE$ ";
-  return c.parse_commands() == true ? 0 : 1;
+  return !c.parse_commands();
 }
 
 bool Controller::parse_commands() {
@@ -34,6 +43,8 @@ bool Controller::parse_commands() {
     std::string cmd;
     std::getline(input_, cmd);
     if (input_.eof()) return status;
+    if (&input_ != &std::cin)  // Echo the command for non-interactive session
+      output_ << cmd << std::endl;
     exitstatus result = execute_command(cmd);
     switch (result) {
       case OKAY:
@@ -48,11 +59,13 @@ bool Controller::parse_commands() {
         break;
       case FS_ERROR:
         std::cerr << "Filesystem Error" << std::endl;
+        status = false;
         break;
       case EXIT:
         return status;
     }
-    output_ << "\nyou@your-comp:~/SARUDE-DANDSTORM-ORIGINAL-MIX/DRIVE$ ";
+    if (&input_ == &std::cin)  // Don't add prompts for non-interactive
+      output_ << "\nyou@your-comp:~/SARUDE-DANDSTORM-ORIGINAL-MIX/DRIVE$ ";
   }
   return fs_.exit();
 }

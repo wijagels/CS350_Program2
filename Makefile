@@ -3,7 +3,7 @@
 # William Jagels
 
 CFLAGS=-g -Wall -Wextra -pedantic -std=gnu11
-CXXFLAGS=-g -Wall -Wextra -pedantic -std=gnu++11
+CXXFLAGS=-g -Wall -Wextra -pedantic -std=gnu++11 -DNDEBUG
 SRCEXT=cpp
 HEADEREXT=hpp
 LDFLAGS=
@@ -33,10 +33,10 @@ clean:
 	-rm $(EXECUTABLE) *.o *.d
 
 test: all initialize
-	printf "list\nexit" | $(RUN)
-	printf "import import/image.jpg img\nexit" | $(RUN)
-	printf "list\nexit" | $(RUN)
-	printf "cat img\nexit" | $(RUN)
+	@echo -e "$(ccgreen)Testing small file$(ccend)"
+	$(RUN) ./test/import_small
+	@echo -e "$(ccgreen)Testing large file$(ccend)"
+	$(RUN) ./test/import_large
 
 initialize: all
 	$(RUN) initialize

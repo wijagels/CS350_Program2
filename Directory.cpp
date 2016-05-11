@@ -26,16 +26,17 @@ Directory::Directory(std::string file)
 Directory::~Directory() { write_out(); }
 
 void Directory::write_out(void) {
-  logd("Destructing directory");
   /* std::ios::trunc clobbers the file for us */
   dir_file_.open(dir_file_name_, std::ios::out | std::ios::trunc);
   assert(dir_file_.is_open());
   for (auto e : dir_map_) {
-    dir_file_ << e.first << ":" << e.second.first << ":" << e.second.second << std::endl;
+    dir_file_ << e.first << ":" << e.second.first << ":" << e.second.second
+              << std::endl;
   }
 }
 
-unsigned Directory::add_file(std::string name, unsigned inode, unsigned filesize) {
+unsigned Directory::add_file(std::string name, unsigned inode,
+                             unsigned filesize) {
   dir_map_.insert({name, std::pair<unsigned, unsigned>{inode, filesize}});
   return inode;
 }

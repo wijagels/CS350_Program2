@@ -89,6 +89,7 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
     // Get a block from the log and write to it
     logd("Writing %lu bytes", blocks[i].size());
     auto b_loc = log(blocks.at(i).data());
+    logd("Destination block: [%u]:%u", i, b_loc);
     // Store the blocks in the inode
     node[i] = b_loc;
   }
@@ -105,14 +106,7 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   // Add the inode to the directory listing
   dir_.add_file(lfs_file, m_loc, static_cast<int>(size));
 
-  /* For testing purposes */
-  // std::ofstream fout;
-  // fout.open("img.jpg", std::ios::binary);
-  // for (auto e : blocks) {
-  //   logd("Writing %lu bytes", e.size());
-  //   fout.write(reinterpret_cast<char *>(&e[0]), e.size());
-  // }
-  // fout.close();
+  delete[] buf;
   return true;
 }
 
@@ -148,10 +142,12 @@ std::string FileSystem::list() {
   std::stringstream ss;
   ss << std::setw(COL_WIDTH) << "Filename" << std::setw(COL_WIDTH) << "inode"
      << std::setw(COL_WIDTH) << "Filesize" << std::endl;
-  ss << std::setfill('-') << std::setw(COL_WIDTH * 3) << "-" << std::endl << std::setfill(' ');
+  ss << std::setfill('-') << std::setw(COL_WIDTH * 3) << "-" << std::endl
+     << std::setfill(' ');
   for (const auto &e : dir_.get_map()) {
-    ss << std::setw(COL_WIDTH) << e.first << std::setw(COL_WIDTH) << e.second.first
-       << std::setw(COL_WIDTH) << e.second.second << std::endl;
+    ss << std::setw(COL_WIDTH) << e.first << std::setw(COL_WIDTH)
+       << e.second.first << std::setw(COL_WIDTH) << e.second.second
+       << std::endl;
   }
   ss << std::endl;
   return ss.str();
@@ -178,18 +174,18 @@ std::string FileSystem::cat(std::string filename) {
   segment_->commit();
   unsigned inum = dir_.lookup_file(filename);
   logd("%u", inum);
-  assert(inum != -1);
+  assert(inum != (unsigned)-1);
   unsigned blockid = imap_[inum];
   logd("Getting inode %u:%u", inum, blockid);
-  assert(blockid != -1);
+  assert(blockid != (unsigned)-1);
   Inode inode{blockid};
   std::stringstream ss;
   for (size_t i = 0; i < 128; i++) {
     char block[1024];
-    logd("Access block [%u]:%u", i, inode[i]);
-    fs_read_block(block, 8);
+    // logd("Access block [%zu]:%u", i, inode[i]);
+    fs_read_block(block, inode[i]);
     // logd("block %s", block);
-    // ss << block;
+    ss << block;
   }
   logd("%s", inode.filename().c_str());
   logd("%u", inode.filesize());
@@ -257,19 +253,18 @@ int FileSystem::log(const Inode &inode) {
 
   // Populate second part with filename
   for (uint i = 0; i < filename_len; i++) {
-    iter++;
     data[iter] = filename[i];
+    iter++;
   }
-  iter++;
   data[iter] = '\0';
   // Write the data blocks after filename
-  for (uint j = 0; j < data_len; j += 4) {
+  for (uint j = 0; j < data_len / 4; j++) {
     logd("writing out %u", inode[j]);
     // Little endian FTW
-    data[iter + j] = static_cast<char>(inode[j]);
-    data[iter + j + 1] = static_cast<char>(inode[j] >> 8);
-    data[iter + j + 2] = static_cast<char>(inode[j] >> 16);
-    data[iter + j + 3] = static_cast<char>(inode[j] >> 24);
+    data[iter + j * 4] = static_cast<char>(inode[j]);
+    data[iter + j * 4 + 1] = static_cast<char>(inode[j] >> 8);
+    data[iter + j * 4 + 2] = static_cast<char>(inode[j] >> 16);
+    data[iter + j * 4 + 3] = static_cast<char>(inode[j] >> 24);
   }
   // Pad rest with 0s
   for (uint k = filename_len + data_len; k < BLOCK_SIZE; k++) {

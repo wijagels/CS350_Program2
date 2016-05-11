@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cassert>
+#include <sstream>
 
 #include "./debug.h"
 #include "FileSystem.hpp"
@@ -14,19 +15,17 @@ Inode::Inode(Blockid id) : blocks_() {
   constexpr const unsigned DATA_SZ = 129 * 4;
   char block[1024];
   fs_read_block(block, id);
-  char fname[1024 - DATA_SZ];
 
   // read filesize
   fsize_ = bytes_to_uint(&(block[0]));
 
+  std::stringstream ss;
   // read filename
   unsigned i;
-  for (i = 5; i < 1024 - DATA_SZ && block[i] != 0; i++) {
-    logd("read char %c", block[i]);
-    fname[i - 5] = block[i];
+  for (i = 4; i < 1024 - DATA_SZ && block[i] != 0; i++) {
+    ss << block[i];
   }
-  fname[i] = '\0';
-  fname_ = std::string{fname};
+  fname_ = ss.str();
   ++i;
 
   // make sure we're not out of room

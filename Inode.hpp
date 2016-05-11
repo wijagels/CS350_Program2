@@ -15,6 +15,7 @@ class Inode {
   const Blockid& operator[](int) const;
   inline const std::string& filename() const { return fname_; }
   inline int filesize() const { return fsize_; }
+  bool has_block(Blockid) const;
 
  private:
   std::string fname_;

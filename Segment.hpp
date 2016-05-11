@@ -3,10 +3,22 @@
 
 #include <vector>
 
+#include "Imap.hpp"
+
 class Segment {
+ public:
   using Block = std::vector<char>;
 
- public:
+  struct MetaBlock {
+    enum class Kind { IMAP, INODE, FILE };
+    Kind kind;
+    unsigned loc;
+    Block block;
+
+    MetaBlock() = delete;
+    MetaBlock(Kind k, unsigned l, const Block& b): kind(k), loc(l), block(b) {}
+  };
+
   Segment() = delete;
   Segment(unsigned, unsigned, unsigned);
   inline bool is_free() { return free_block_ < blocks_.size(); }
@@ -15,6 +27,7 @@ class Segment {
   void commit();
   void add_file(unsigned, unsigned);
   void remove_file(unsigned);
+  std::vector<MetaBlock> clean(const Imap &);
 
  private:
   void write_uint(char *, unsigned);

@@ -43,3 +43,10 @@ Inode::Inode(const std::string& fname, unsigned fsize)
 Blockid& Inode::operator[](int i) { return blocks_[i]; }
 
 const Blockid& Inode::operator[](int i) const { return blocks_[i]; }
+
+bool Inode::has_block(Blockid id) const {
+  for (auto it = blocks_.begin(); it != blocks_.end(); it++) {
+    if (*it == id) return true;
+  }
+  return false;
+}

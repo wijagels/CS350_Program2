@@ -83,12 +83,12 @@ bool FileSystem::import(std::string linux_file, std::string lfs_file) {
   }
 
   // Create a new inode
-  Inode node(lfs_file, static_cast<int>(size));
+  Inode node(lfs_file, static_cast<unsigned>(size));
   // For each block from lin_fn
   for (unsigned i = 0; i < blocks.size(); i++) {
     // Get a block from the log and write to it
     logd("Writing %lu bytes", blocks[i].size());
-    auto b_loc = log(blocks[i].data());
+    auto b_loc = log(blocks.at(i).data());
     // Store the blocks in the inode
     node[i] = b_loc;
   }
@@ -190,12 +190,13 @@ std::string FileSystem::cat(std::string filename) {
   std::stringstream ss;
   for (size_t i = 0; i < 128; i++) {
     char block[1024];
-    if (inode[i] > MAX_FILES) break;
-    fs_read_block(block, inode[i]);
-    logd("Access block %u", inode[i]);
-    logd("block %s", block);
-    ss << block;
+    logd("Access block [%u]:%u", i, inode[i]);
+    fs_read_block(block, 8);
+    // logd("block %s", block);
+    // ss << block;
   }
+  logd("%s", inode.filename().c_str());
+  logd("%u", inode.filesize());
   ss << std::endl;
   return ss.str();
 }
@@ -251,16 +252,23 @@ int FileSystem::log(const Inode &inode) {
   const char *filename = inode.filename().c_str();
 
   // Populate first 4 bytes with filesize
-  data[0] = inode.filesize();
+  // data[0] = inode.filesize();
+  data[0] = static_cast<char>(inode.filesize());
+  data[1] = static_cast<char>(inode.filesize() >> 8);
+  data[2] = static_cast<char>(inode.filesize() >> 16);
+  data[3] = static_cast<char>(inode.filesize() >> 24);
   uint iter = 4;
 
   // Populate second part with filename
   for (uint i = 0; i < filename_len; i++) {
-    iter += 4;
+    iter++;
     data[iter] = filename[i];
   }
+  iter++;
+  data[iter] = '\0';
   // Write the data blocks after filename
   for (uint j = 0; j < data_len; j += 4) {
+    logd("writing out %u", inode[j]);
     // Little endian FTW
     data[iter + j] = static_cast<char>(inode[j]);
     data[iter + j + 1] = static_cast<char>(inode[j] >> 8);

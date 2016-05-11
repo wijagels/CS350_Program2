@@ -1,8 +1,10 @@
 /* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "Inode.hpp"
 
-#include <assert.h>
+#include <string>
+#include <cassert>
 
+#include "./debug.h"
 #include "FileSystem.hpp"
 
 Inode::Inode(Blockid id) : blocks_() {
@@ -19,22 +21,25 @@ Inode::Inode(Blockid id) : blocks_() {
 
   // read filename
   unsigned i;
-  for (i = 4; i < 1024 - DATA_SZ && block[i] != 0; i++) {
-    fname[i - 4] = block[i];
+  for (i = 5; i < 1024 - DATA_SZ && block[i] != 0; i++) {
+    logd("read char %c", block[i]);
+    fname[i - 5] = block[i];
   }
   fname[i] = '\0';
   fname_ = std::string{fname};
+  ++i;
 
   // make sure we're not out of room
   assert(i < 1024 - DATA_SZ);
 
   // read the rest
   for (int j = 0; j < 128; j++) {
-    blocks_[j] = bytes_to_uint(&(block[i + j*4]));
+    blocks_[j] = bytes_to_uint(&(block[i + j * 4]));
   }
 }
 
-Inode::Inode(const std::string& fname, unsigned fsize) : fname_{fname}, fsize_{fsize}, blocks_() {}
+Inode::Inode(const std::string& fname, unsigned fsize)
+    : fname_{fname}, fsize_{fsize}, blocks_{} {}
 
 Blockid& Inode::operator[](int i) { return blocks_[i]; }
 

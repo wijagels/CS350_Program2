@@ -36,6 +36,7 @@ core
 
 # Dependency files
 *.d
+*.d.*
 
 # Lab executables
 lab[0-9]

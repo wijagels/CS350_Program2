@@ -33,10 +33,10 @@ clean:
 	-rm $(EXECUTABLE) *.o *.d
 
 test: all initialize
-	echo "list" | $(RUN)
-	echo "import import/image.jpg img" | $(RUN)
-	echo "list" | $(RUN)
-	echo "cat img" | $(RUN)
+	echo "list\nexit" | $(RUN)
+	echo "import import/image.jpg img\nexit" | $(RUN)
+	echo "list\nexit" | $(RUN)
+	echo "cat img\nexit" | $(RUN)
 
 initialize: all
 	$(RUN) initialize

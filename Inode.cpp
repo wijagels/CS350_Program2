@@ -9,6 +9,7 @@
 #include "FileSystem.hpp"
 
 Inode::Inode(Blockid id) : blocks_() {
+  blocks_.fill(0);
   // read file info from block #id
 
   // 129 = 128 block + 1 filesize
@@ -32,7 +33,7 @@ Inode::Inode(Blockid id) : blocks_() {
   assert(i < 1024 - DATA_SZ);
 
   // read the rest
-  for (int j = 0; j < 128; j++) {
+  for (size_t j = 0; j < blocks_.size(); j++) {
     blocks_[j] = bytes_to_uint(&(block[i + j * 4]));
   }
 }

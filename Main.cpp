@@ -42,7 +42,6 @@ bool Controller::parse_commands() {
   while (!input_.eof()) {
     std::string cmd;
     std::getline(input_, cmd);
-    if (input_.eof()) return status;
     if (&input_ != &std::cin)  // Echo the command for non-interactive session
       output_ << cmd << std::endl;
     exitstatus result = execute_command(cmd);
@@ -66,6 +65,7 @@ bool Controller::parse_commands() {
     }
     if (&input_ == &std::cin)  // Don't add prompts for non-interactive
       output_ << "\nyou@your-comp:~/SARUDE-DANDSTORM-ORIGINAL-MIX/DRIVE$ ";
+    if (input_.eof()) return status;
   }
   return fs_.exit();
 }

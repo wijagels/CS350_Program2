@@ -104,19 +104,28 @@ std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
       unsigned id = bytes_to_uint(&(*summ)[i]);
       unsigned block_n = bytes_to_uint(&(*summ)[i+4]);
       if (block_n != 0) {
+        logd("File %u associated with block %u", id, block_n);
         if (id < 10240) {
           // Either an inode block or part of a file
           // Check if imap[id] == block_n => inode block
           //   then copy block to live as inode id
           // Check if inode *id* has block_n in its blocks => file piece
           //   then copy block to live as file assoc with inode id
-          Inode inode(id);
+          Inode inode(imap[id]);
+          logd("Inode file is %s", inode.filename().c_str());
+          logd("Inode %u has blocks:", id);
+          for (size_t t = 0; t < inode.size(); t++) {
+            logd("inode[%lu] = %u", t, inode[t]);
+          }
+          logd("Inode block %u is associated with block %u", id, imap[id]);
           if (imap[id] == block_n) {
             live.push_back(MetaBlock(MetaBlock::Kind::INODE, id, block_n,
                                      blocks_[block_n % blocks_.size()]));
           } else if (inode.has_block(block_n)) {
             live.push_back(MetaBlock(MetaBlock::Kind::FILE, id, block_n,
                                      blocks_[block_n % blocks_.size()]));
+          } else {
+            logd("Block %u is junk", block_n);
           }
         } else {
           // Part of the imap
@@ -125,7 +134,8 @@ std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
           std::ifstream chkpt("DRIVE/CHECKPOINT_REGION", std::ios::binary);
           assert(chkpt.is_open());
 
-          for (unsigned j = 0; j < 40; j++) {
+          unsigned j;
+          for (j = 0; j < 40; j++) {
             char buf[4];
             unsigned mid;
             chkpt.read(buf, 4);
@@ -138,6 +148,7 @@ std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
             }
           }
           chkpt.close();
+          if (j == 40) logd("Block %u is junk", block_n);
         }
       }
     }
@@ -149,3 +160,4 @@ std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
 
   return live;
 }
+

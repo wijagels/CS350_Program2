@@ -184,7 +184,7 @@ bool FileSystem::overwrite(std::string lfs_file, uint howmany, uint start,
   // Make the new inode with the right size
   Inode new_node = Inode(inode.filename(), new_size);
   // Copy pointers from the old inode in
-  for (int i = 0; i < start_block; i++) {
+  for (int i = 0; i < 128; i++) {
     new_node[i] = inode[i];
   }
   for (int i = 0; i < bytes.size() / BLOCK_SIZE + 1; i++) {
@@ -192,17 +192,18 @@ bool FileSystem::overwrite(std::string lfs_file, uint howmany, uint start,
       std::vector<char> v(bytes.begin() + 1024 * i, bytes.end());
       auto b_loc = log(v.data());
       new_node[start_block + i] = b_loc;
+      segment_->add_file(inode_num, b_loc);
     } else {
       std::vector<char> v(bytes.begin() + 1024 * i, bytes.begin() + 1024 * (i+1));
       auto b_loc = log(v.data());
       new_node[start_block + i] = b_loc;
+      segment_->add_file(inode_num, b_loc);
     }
   }
 
   auto n_loc = log(inode);
   imap_[inode_num] = log(new_node);
   log_imap_sector(4 * inode_num / BLOCK_SIZE);
-  // segment_->remove_file(inode_num);
   segment_->add_file(inode_num, n_loc);
   return true;
 }

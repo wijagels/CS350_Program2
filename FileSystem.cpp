@@ -153,6 +153,61 @@ std::string FileSystem::display(std::string file, uint howmany, uint start) {
   return result.substr(start, howmany);
 }
 
+/*
+ * overwrite <lfs_filename> <howmany> <start> <c>
+ *
+ * Write byte <c> <howmany> times in <lfs_filename>, allocating more blocks
+ * as needed
+ */
+bool FileSystem::overwrite(std::string lfs_file, uint howmany, uint start,
+                           char byte) {
+  unsigned inode_num = dir_.lookup_file(lfs_file);
+  Inode inode{imap_[inode_num]};
+  // Compute the ending size
+  unsigned new_size = std::max((unsigned)inode.size(), start + howmany);
+  unsigned start_block = start / BLOCK_SIZE;
+  unsigned block_num = inode[start_block];
+  loge("%u, %u, %u", start_block, block_num, inode.filesize());
+  char block[1024];
+  std::fill(block, block + BLOCK_SIZE, 0);
+  fs_read_block(block, block_num);
+  std::vector<char> bytes;
+  bytes.assign(block, block + BLOCK_SIZE);
+  bytes.resize(new_size);
+  // Get the offset into bytes to start overwriting
+  unsigned offset = start % BLOCK_SIZE;
+  loge("%u -> %u", offset, offset + howmany);
+  // Perform the overwrite
+  for (int i = offset; i < offset + howmany; i++) {
+    bytes[i] = byte;
+  }
+  // Make the new inode with the right size
+  Inode new_node = Inode(inode.filename(), new_size);
+  // Copy pointers from the old inode in
+  for (int i = 0; i < 128; i++) {
+    new_node[i] = inode[i];
+  }
+  for (int i = 0; i < bytes.size() / BLOCK_SIZE + 1; i++) {
+    if ((i + 1) * 1024 > bytes.size()) {
+      std::vector<char> v(bytes.begin() + 1024 * i, bytes.end());
+      auto b_loc = log(v.data());
+      new_node[start_block + i] = b_loc;
+      segment_->add_file(inode_num, b_loc);
+    } else {
+      std::vector<char> v(bytes.begin() + 1024 * i, bytes.begin() + 1024 * (i+1));
+      auto b_loc = log(v.data());
+      new_node[start_block + i] = b_loc;
+      segment_->add_file(inode_num, b_loc);
+    }
+  }
+
+  auto n_loc = log(inode);
+  imap_[inode_num] = log(new_node);
+  log_imap_sector(4 * inode_num / BLOCK_SIZE);
+  segment_->add_file(inode_num, n_loc);
+  return true;
+}
+
 std::string FileSystem::list() {
   const int COL_WIDTH = 20;
   std::stringstream ss;
@@ -179,8 +234,8 @@ bool FileSystem::clean(unsigned segments) {
   using Kind = Segment::MetaBlock::Kind;
   assert(1 <= segments && segments <= 32);
 
-  std::fstream checkpoint("DRIVE/CHECKPOINT_REGION", std::ios::binary | std::ios::in |
-                          std::ios::out);
+  std::fstream checkpoint("DRIVE/CHECKPOINT_REGION",
+                          std::ios::binary | std::ios::in | std::ios::out);
   assert(checkpoint.is_open());
 
   // Commit current segment and load up a clean one

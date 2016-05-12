@@ -28,7 +28,6 @@ class Segment {
   inline int id() { return id_; }
   void commit();
   void add_file(unsigned, unsigned);
-  void remove_file(unsigned);
   std::vector<MetaBlock> clean(const Imap &);
   Block &operator[](int i) { return blocks_[i]; }
   const Block &operator[](int i) const { return blocks_[i]; }

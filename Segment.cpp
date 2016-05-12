@@ -70,18 +70,6 @@ void Segment::add_file(unsigned inode_id, unsigned block_id) {
   assert(false);
 }
 
-void Segment::remove_file(unsigned inode_id) {
-  for (unsigned i = 0; i < 8; i++) {
-    Block& block = blocks_[i];
-    for (unsigned j = 0; j < block.size(); j += 8) {
-      assert(bytes_to_uint(&block[j + 4]) != 0);
-      if (bytes_to_uint(&block[j]) == inode_id) {
-        // TODO
-      }
-    }
-  }
-}
-
 void Segment::commit() {
   std::ostringstream ss;
   ss << "DRIVE/SEGMENT" << id_;

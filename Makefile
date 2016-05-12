@@ -37,6 +37,8 @@ test: all initialize
 	$(RUN) ./test/import_small
 	@echo -e "$(ccgreen)Testing large file$(ccend)"
 	$(RUN) ./test/import_large
+	@echo -e "$(ccgreen)Testing overwrite without new block$(ccend)"
+	$(RUN) ./test/overwrite_small
 
 initialize: all
 	$(RUN) initialize

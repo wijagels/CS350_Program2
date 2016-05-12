@@ -178,23 +178,24 @@ bool FileSystem::overwrite(std::string lfs_file, uint howmany, uint start,
   unsigned offset = start % BLOCK_SIZE;
   loge("%u -> %u", offset, offset + howmany);
   // Perform the overwrite
-  for (int i = offset; i < offset + howmany; i++) {
+  for (unsigned i = offset; i < offset + howmany; i++) {
     bytes[i] = byte;
   }
   // Make the new inode with the right size
   Inode new_node = Inode(inode.filename(), new_size);
   // Copy pointers from the old inode in
-  for (int i = 0; i < 128; i++) {
+  for (unsigned i = 0; i < 128; i++) {
     new_node[i] = inode[i];
   }
-  for (int i = 0; i < bytes.size() / BLOCK_SIZE + 1; i++) {
+  for (unsigned i = 0; i < bytes.size() / BLOCK_SIZE + 1; i++) {
     if ((i + 1) * 1024 > bytes.size()) {
       std::vector<char> v(bytes.begin() + 1024 * i, bytes.end());
       auto b_loc = log(v.data());
       new_node[start_block + i] = b_loc;
       segment_->add_file(inode_num, b_loc);
     } else {
-      std::vector<char> v(bytes.begin() + 1024 * i, bytes.begin() + 1024 * (i+1));
+      std::vector<char> v(bytes.begin() + 1024 * i,
+                          bytes.begin() + 1024 * (i + 1));
       auto b_loc = log(v.data());
       new_node[start_block + i] = b_loc;
       segment_->add_file(inode_num, b_loc);
@@ -250,7 +251,7 @@ bool FileSystem::clean(unsigned segments) {
 
       // Get a new segment
       segment_ =
-        SegmentPtr(new Segment(s, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE));
+          SegmentPtr(new Segment(s, SEGMENT_SIZE / BLOCK_SIZE, BLOCK_SIZE));
       break;
     }
   }
@@ -258,7 +259,8 @@ bool FileSystem::clean(unsigned segments) {
 
   unsigned cleaned = 0;
   for (size_t s = 0; cleaned < segments && s < live_segs_.size(); s++) {
-    if (!live_segs_[s] || s == static_cast<unsigned>(segment_->id()) || written[s]) {
+    if (!live_segs_[s] || s == static_cast<unsigned>(segment_->id()) ||
+        written[s]) {
       continue;
     }
 
@@ -277,53 +279,54 @@ bool FileSystem::clean(unsigned segments) {
     unsigned t;
     Inode *inode;
     // Go through live data and make updates appropriately
-    for (auto &meta: live_data) {
+    for (auto &meta : live_data) {
       switch (meta.kind) {
-      case Kind::FILE:
-        // Go to inode id and change the old block
-        // Log meta.block, inode, and imap sector
-        // WARN Write new imap sector and then logging IMAP sectors later on in this
-        // list will cause inaccuracies
-        logd("Moving file %u block %u", meta.id, meta.loc);
-        inode = new Inode(imap_[meta.id]);
+        case Kind::FILE:
+          // Go to inode id and change the old block
+          // Log meta.block, inode, and imap sector
+          // WARN Write new imap sector and then logging IMAP sectors later on
+          // in this
+          // list will cause inaccuracies
+          logd("Moving file %u block %u", meta.id, meta.loc);
+          inode = new Inode(imap_[meta.id]);
 
-        t = log(meta.block.data());
-        segment_->add_file(meta.id, t);
-        for (size_t i = 0; i < inode->size(); i++) {
-          if ((*inode)[i] == meta.loc) {
-            (*inode)[i] = t;
-            logd("Reset inode %u block %u to %u", meta.id, meta.loc, t);
-            break;
+          t = log(meta.block.data());
+          segment_->add_file(meta.id, t);
+          for (size_t i = 0; i < inode->size(); i++) {
+            if ((*inode)[i] == meta.loc) {
+              (*inode)[i] = t;
+              logd("Reset inode %u block %u to %u", meta.id, meta.loc, t);
+              break;
+            }
           }
-        }
 
-        t = log(*inode);
-        segment_->add_file(meta.id, t);
-        imap_[meta.id] = t;
-        log_imap_sector(4 * meta.id / BLOCK_SIZE);
+          t = log(*inode);
+          segment_->add_file(meta.id, t);
+          imap_[meta.id] = t;
+          log_imap_sector(4 * meta.id / BLOCK_SIZE);
 
-        delete inode;
-        inode = nullptr;
-        break;
-      case Kind::INODE:
-        // Log block
-        // Go to imap[id] and change entry to logged block
-        // Log imap sector
-        logd("Moving file %u from %u", meta.id, meta.loc);
-        t = log(meta.block.data());
-        segment_->add_file(meta.id, t);
-        imap_[meta.id] = t;
-        log_imap_sector(4 * meta.id / BLOCK_SIZE);
-        break;
-      case Kind::IMAP:
-        // Log block and update checkpoint region
-        // Lazy af
-        logd("Moving imap sector %u", meta.id);
-        log_imap_sector(meta.id);
-        break;
-      default:
-        assert(false);
-        break;
+          delete inode;
+          inode = nullptr;
+          break;
+        case Kind::INODE:
+          // Log block
+          // Go to imap[id] and change entry to logged block
+          // Log imap sector
+          logd("Moving file %u from %u", meta.id, meta.loc);
+          t = log(meta.block.data());
+          segment_->add_file(meta.id, t);
+          imap_[meta.id] = t;
+          log_imap_sector(4 * meta.id / BLOCK_SIZE);
+          break;
+        case Kind::IMAP:
+          // Log block and update checkpoint region
+          // Lazy af
+          logd("Moving imap sector %u", meta.id);
+          log_imap_sector(meta.id);
+          break;
+        default:
+          assert(false);
+          break;
       }
     }
     written[segment_->id()] = true;
@@ -384,7 +387,6 @@ std::string FileSystem::cat(std::string filename) {
 }
 
 /* Assumes block is of size 1024 */
-// TODO Move this to a better place so it can be used by every object in the FS
 void fs_read_block(char *block, uint block_num) {
   uint seg_num = block_num / 1024;
   uint seg_ind = block_num % 1024;

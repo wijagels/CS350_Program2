@@ -13,7 +13,7 @@
 using uint = unsigned int;
 
 void fs_read_block(char *, uint);
-uint bytes_to_uint(char *);
+uint bytes_to_uint(char *bytes);
 
 class FileSystem {
  public:
@@ -30,7 +30,7 @@ class FileSystem {
   bool exit();
 
  private:
-  int log(char *);
+  int log(char *buffer);
   int log(const Inode &);
   void log_imap_sector(uint);
 

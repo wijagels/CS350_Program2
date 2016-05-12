@@ -4,3 +4,4 @@ ls
 cat small
 remove small
 ls
+exit

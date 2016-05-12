@@ -3,7 +3,7 @@
 # William Jagels
 
 CFLAGS=-g -Wall -Wextra -pedantic -std=gnu11
-CXXFLAGS=-g -Wall -Wextra -pedantic -std=gnu++11 -DNDEBUG
+CXXFLAGS=-g -Wall -Wextra -pedantic -std=gnu++11 #-DNDEBUG
 SRCEXT=cpp
 HEADEREXT=hpp
 LDFLAGS=

@@ -1,7 +1,6 @@
 /* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "Segment.hpp"
 
-#include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <sstream>

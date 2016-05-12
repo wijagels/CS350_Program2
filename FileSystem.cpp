@@ -1,6 +1,7 @@
 /* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "FileSystem.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <cassert>

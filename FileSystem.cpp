@@ -1,6 +1,7 @@
 /* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "FileSystem.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <cassert>
@@ -150,6 +151,39 @@ std::string FileSystem::display(std::string file, uint howmany, uint start) {
   return result.substr(start, howmany);
 }
 
+/*
+ * overwrite <lfs_filename> <howmany> <start> <c>
+ *
+ * Write byte <c> <howmany> times in <lfs_filename>, allocating more blocks
+ * as needed
+ */
+bool FileSystem::overwrite(std::string lfs_file, uint howmany, uint start,
+                           char byte) {
+  unsigned inode_num = dir_.lookup_file(lfs_file);
+  Inode inode{imap_[inode_num]};
+  // Compute the ending size
+  unsigned new_size = std::max((unsigned)inode.size(), start + howmany);
+  unsigned start_block = start / BLOCK_SIZE;
+  unsigned block_num = inode[start_block];
+  loge("%u, %u, %u", start_block, block_num, inode.filesize());
+  char block[1024];
+  std::fill(block, block + BLOCK_SIZE, 0);
+  fs_read_block(block, block_num);
+  std::vector<char> bytes;
+  bytes.assign(block, block + BLOCK_SIZE);
+  bytes.resize(new_size);
+  // Get the offset into bytes to start overwriting
+  unsigned offset = start % BLOCK_SIZE;
+  loge("%u -> %u", offset, offset + howmany);
+  // Perform the overwrite
+  for (int i = offset; i < offset + howmany; i++) {
+    bytes[i] = byte;
+  }
+  loge("%zu should be %u", bytes.size(), new_size);
+  loge("%s", bytes.data());
+  return true;
+}
+
 std::string FileSystem::list() {
   const int COL_WIDTH = 20;
   std::stringstream ss;
@@ -181,53 +215,54 @@ bool FileSystem::clean(unsigned segment_id) {
   auto live_data = to_clean.clean(imap_);
   to_clean.commit();
 
-  std::fstream checkpoint("DRIVE/CHECKPOINT_REGION", std::ios::binary | std::ios::in |
-                          std::ios::out);
+  std::fstream checkpoint("DRIVE/CHECKPOINT_REGION",
+                          std::ios::binary | std::ios::in | std::ios::out);
   assert(checkpoint.is_open());
 
   unsigned t;
   Inode *inode;
   // Go through live data and make updates appropriately
-  for (auto &meta: live_data) {
+  for (auto &meta : live_data) {
     switch (meta.kind) {
-    case Kind::FILE:
-      // Go to inode id and change the old block
-      // Log meta.block, inode, and imap sector
-      // WARN Write new imap sector and then logging IMAP sectors later on in this
-      // list will cause inaccuracies
-      inode = new Inode(imap_[meta.id]);
+      case Kind::FILE:
+        // Go to inode id and change the old block
+        // Log meta.block, inode, and imap sector
+        // WARN Write new imap sector and then logging IMAP sectors later on in
+        // this
+        // list will cause inaccuracies
+        inode = new Inode(imap_[meta.id]);
 
-      t = log(meta.block.data());
-      for (size_t i = 0; i < inode->size(); i++) {
-        if ((*inode)[i] == meta.loc) {
-          (*inode)[i] = t;
-          break;
+        t = log(meta.block.data());
+        for (size_t i = 0; i < inode->size(); i++) {
+          if ((*inode)[i] == meta.loc) {
+            (*inode)[i] = t;
+            break;
+          }
         }
-      }
 
-      t = log(*inode);
-      imap_[meta.id] = t;
-      log_imap_sector(4 * meta.id / BLOCK_SIZE);
+        t = log(*inode);
+        imap_[meta.id] = t;
+        log_imap_sector(4 * meta.id / BLOCK_SIZE);
 
-      delete inode;
-      inode = nullptr;
-      break;
-    case Kind::INODE:
-      // Log block
-      // Go to imap[id] and change entry to logged block
-      // Log imap sector
-      t = log(meta.block.data());
-      imap_[meta.id] = t;
-      log_imap_sector(4 * meta.id / BLOCK_SIZE);
-      break;
-    case Kind::IMAP:
-      // Log block and update checkpoint region
-      // Lazy af
-      log_imap_sector(meta.id);
-      break;
-    default:
-      assert(false);
-      break;
+        delete inode;
+        inode = nullptr;
+        break;
+      case Kind::INODE:
+        // Log block
+        // Go to imap[id] and change entry to logged block
+        // Log imap sector
+        t = log(meta.block.data());
+        imap_[meta.id] = t;
+        log_imap_sector(4 * meta.id / BLOCK_SIZE);
+        break;
+      case Kind::IMAP:
+        // Log block and update checkpoint region
+        // Lazy af
+        log_imap_sector(meta.id);
+        break;
+      default:
+        assert(false);
+        break;
     }
   }
 

@@ -123,6 +123,14 @@ exitstatus Controller::execute_command(std::string cmd) {
     std::cout << fs_.cat(tokenized.at(1)) << std::endl;
     return OKAY;
   }
+  if (tokenized.at(0) == "overwrite") {
+    if (tokenized.size() != 5) return BAD_LEN;
+    bool status =
+        fs_.overwrite(tokenized.at(1), std::stoul(tokenized.at(2)),
+                      std::stoul(tokenized.at(3)), tokenized.at(4).c_str()[0]);
+    if (status) return OKAY;
+    return FS_ERROR;
+  }
   return NOT_CMD;
 }
 

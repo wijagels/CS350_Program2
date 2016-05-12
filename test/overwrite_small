@@ -1,0 +1,8 @@
+ls
+import import/small.txt small
+ls
+cat small
+overwrite small 4 20 *
+cat small
+remove small
+ls

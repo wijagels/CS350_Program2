@@ -1,6 +1,7 @@
 /* Copyright 2016 Sarude Dandstorm $ ORIGINAL MIX */
 #include "Segment.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <sstream>
@@ -112,11 +113,6 @@ std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
           // Check if inode *id* has block_n in its blocks => file piece
           //   then copy block to live as file assoc with inode id
           Inode inode(imap[id]);
-          logd("Inode file is %s", inode.filename().c_str());
-          logd("Inode %u has blocks:", id);
-          for (size_t t = 0; t < inode.size(); t++) {
-            logd("inode[%lu] = %u", t, inode[t]);
-          }
           logd("Inode block %u is associated with block %u", id, imap[id]);
           if (imap[id] == block_n) {
             live.push_back(MetaBlock(MetaBlock::Kind::INODE, id, block_n,

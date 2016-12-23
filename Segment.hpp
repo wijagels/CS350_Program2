@@ -17,14 +17,14 @@ class Segment {
     Block block;
 
     MetaBlock() = delete;
-    MetaBlock(Kind k, unsigned id, unsigned l, const Block& b):
-      kind(k), id(id), loc(l), block(b) {}
+    MetaBlock(Kind k, unsigned id, unsigned l, const Block &b)
+        : kind(k), id(id), loc(l), block(b) {}
   };
 
   Segment() = delete;
   Segment(unsigned, unsigned, unsigned);
   inline bool is_free() { return free_block_ < blocks_.size(); }
-  unsigned write(char *);
+  unsigned write(char *buffer);
   inline int id() { return id_; }
   void commit();
   void add_file(unsigned, unsigned);

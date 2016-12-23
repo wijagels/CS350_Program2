@@ -18,7 +18,9 @@ class Directory {
   unsigned lookup_file(std::string);
   unsigned remove_file(std::string);
   std::vector<unsigned> dump_inodes();
-  std::map<std::string, std::pair<unsigned, unsigned> > get_map() { return dir_map_; }
+  std::map<std::string, std::pair<unsigned, unsigned> > get_map() {
+    return dir_map_;
+  }
 
  protected:
   void write_out(void);

@@ -10,9 +10,9 @@ class Inode {
  public:
   Inode() = delete;
   Inode(const std::string&, unsigned);
-  Inode(Blockid);
-  Blockid& operator[](int);
-  const Blockid& operator[](int) const;
+  explicit Inode(Blockid);
+  Blockid& operator[](int index);
+  const Blockid& operator[](int index) const;
   inline const std::string& filename() const { return fname_; }
   inline int filesize() const { return fsize_; }
   bool has_block(Blockid) const;

@@ -4,6 +4,7 @@
 #include <cassert>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 #include "./debug.h"
 
@@ -84,13 +85,13 @@ void Segment::commit() {
   logd("Commit segment %u", id_);
 }
 
-std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
+std::vector<Segment::MetaBlock> Segment::clean(const Imap& imap) {
   std::vector<MetaBlock> live;
 
   for (auto summ = blocks_.begin(); summ != blocks_.begin() + 8; summ++) {
-    for (size_t i = 0; i < summ->size(); i+=8) {
+    for (size_t i = 0; i < summ->size(); i += 8) {
       unsigned id = bytes_to_uint(&(*summ)[i]);
-      unsigned block_n = bytes_to_uint(&(*summ)[i+4]);
+      unsigned block_n = bytes_to_uint(&(*summ)[i + 4]);
       if (block_n != 0) {
         logd("File %u associated with block %u", id, block_n);
         if (id < 10240) {
@@ -143,4 +144,3 @@ std::vector<Segment::MetaBlock> Segment::clean(const Imap &imap) {
 
   return live;
 }
-
